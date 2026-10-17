@@ -10,6 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # site/ is generated from kit/ and scripts/legacy-redirects.mjs; fail if it was not regenerated.
+      - run: node scripts/build-site.mjs --check
+
+      - run: node --test "scripts/*.test.mjs"
+
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site/
