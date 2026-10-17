@@ -14,9 +14,10 @@ jobs:
         with:
           node-version: 24
 
-      # site/ is generated from kit/ and scripts/legacy-redirects.mjs; fail if it was not regenerated.
+      # site/ is generated from kit/, scripts/legacy-redirects.mjs and legacy/; fail if it was not regenerated.
       - run: node scripts/build-site.mjs --check
 
+      # Unit tests; with CI set they skip their own site/ freshness test (the step above covers it).
       - run: node --test "scripts/*.test.mjs"
 
       - uses: actions/upload-pages-artifact@v5
