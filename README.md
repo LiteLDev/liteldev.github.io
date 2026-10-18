@@ -1,7 +1,7 @@
 # liteldev.github.io
 
-The root of **docs.levimc.org** (GitHub Pages, deployed from `site/` by `.github/workflows/deploy.yml`) and
-the home of **levimc-kit**, the shared design system of every LeviMC website.
+The root of **docs.levimc.org** (GitHub Pages, generated into `site/` and deployed by
+`.github/workflows/deploy.yml`).
 
 Project repositories with Pages publish their own docs at `docs.levimc.org/<Repo>/` (LeviLamina,
 LegacyScriptEngine, lip, LeviLauncher, LeviLaunchroid). This site answers every other path:
@@ -15,37 +15,20 @@ LegacyScriptEngine, lip, LeviLauncher, LeviLaunchroid). This site answers every 
 
 ## levimc-kit (`kit/`)
 
-`kit/` is the canonical, published copy of levimc-kit and the source of truth for the vendored copies in each
-site repository (`<app>/kit/`): sites vendor it from here and never edit their copy. See
-[`kit/README.md`](kit/README.md) for the design system, the docs engine and the verification scripts.
-
-- Vendor it into a site: `node kit/scripts/vendor.mjs <site-repo>/<app-dir>` (writes `<app-dir>/kit/`).
-- What changed in each version, and what a site must change when it re-vendors: the Changelog at the end of
-  [`kit/README.md`](kit/README.md#changelog).
-- This is the kit's source, with its demo sites in `kit/demo/`: their sources and the pinned
-  `package-lock.json` the kit is verified with (`vendor.mjs` leaves `demo/` out of every site copy). CI runs the
-  kit's unit tests (`node --test "kit/tests/*.test.mjs"`, in `deploy.yml`) and type-checks, builds and
-  link-checks every demo (`.github/workflows/kit.yml`). To change the kit:
-  1. edit `kit/`, then in `kit/demo/`: `npm ci`, `npm run vendor` (the demo's own vendored copy, not committed);
-     after any change to the components, the theme CSS, `prefs.ts`, `i18n.ts` or the `static/` sources run
-     `node kit/static/build-static.mjs --out ../static` (regenerates the prebuilt `kit/static/`: snippets,
-     `kit.js`, `kit.css`, `kit-chrome.css`, `kit-nojs-dark.css`, pages, Doxygen templates) and `npm run vendor`
-     again;
-  2. still in `kit/demo/`: `npm run typecheck` (TypeScript 7.x; 6.0.x works too), `npm test`, the builds
-     (`build`, `build:lip`, `build:single`, `build:app`), their `preview*` servers and `smoke*` scripts, and
-     `node kit/tests/cross-site.e2e.mjs --app app/dist --docs dist` for the shared preferences (see
-     "Verification scripts" in `kit/README.md`);
-  3. bump `kit/VERSION` and `kit/components/version.ts`, add a Changelog entry, regenerate `site/` (below),
-     commit, then re-vendor each site.
+The pages are levimc-kit's static pages. The kit — the shared design system and chrome of every LeviMC website —
+lives in [LiteLDev/levimc.org](https://github.com/LiteLDev/levimc.org) (`kit/`; its README documents it) and is
+published at <https://levimc.org/kit/v2/>. `node scripts/fetch-kit.mjs` installs it into `kit/` (git-ignored;
+`--source <levimc.org checkout>/kit` installs a local checkout instead). A kit change made in levimc.org reaches this
+site with its next deploy: levimc.org triggers it, and the workflow checks hourly for a newer kit.
 
 ## Building `site/`
 
-`site/` is generated and committed; CI refuses to deploy a stale copy. Node 24 (any Node ≥ 22.18), no
+`site/` is generated (git-ignored): CI fetches the kit, builds it and deploys it. Node 24 (any Node ≥ 22.18), no
 dependencies.
 
 ```sh
-node scripts/build-site.mjs           # regenerate site/ from kit/static, scripts/legacy-redirects.mjs and legacy/
-node scripts/build-site.mjs --check   # what CI runs: fails if site/ is out of date
+node scripts/fetch-kit.mjs            # install levimc-kit into kit/ (from https://levimc.org/kit/v2/)
+node scripts/build-site.mjs           # generate site/ from kit/static, scripts/legacy-redirects.mjs and legacy/
 node --test "scripts/*.test.mjs"      # forwarding rules, redirect pages, assets
 node scripts/build-site.test.mjs --live   # also checks every redirect target and mapped #anchor on the live site
 node kit/scripts/serve-pages.mjs site --base / --port 4173   # preview with GitHub Pages semantics
@@ -61,4 +44,4 @@ adds the 404 forwarding map, the redirect pages' own text, their language and th
 
 To forward another retired docs site, add it to `MOVED_SITES` in `scripts/legacy-redirects.mjs` (every old
 URL, its new canonical URL, the new page's title and what happens to old `#anchors`; files the old site served
-go in `legacy/<old-site>/`), regenerate and commit `site/`.
+go in `legacy/<old-site>/`) and commit; CI regenerates `site/`.

@@ -1,9 +1,0 @@
-# the vendored copy of the kit (npm run vendor)
-/kit/
-node_modules/
-dist/
-dist-lip/
-dist-single/
-.kit/
-app/dist/
-app/.kit/

@@ -2,10 +2,30 @@ on:
   push:
     branches:
       - main
+  # levimc-kit (the pages' bar, footer and styles) is published by levimc.org: levimc.org triggers this workflow
+  # when it publishes a new kit, and the hourly check below catches up otherwise.
+  schedule:
+    - cron: '41 * * * *'
   workflow_dispatch:
 
 jobs:
+  # On the schedule: build only when levimc.org publishes a kit the live site does not run yet.
+  kit:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    outputs:
+      stale: ${{ steps.check.outputs.stale }}
+    steps:
+      - id: check
+        run: |
+          want=$(curl -fsSL https://levimc.org/kit/v2/manifest.json | jq -r '"levimc-kit " + .version + "+" + .build')
+          have=$(curl -fsSL https://docs.levimc.org/ | grep -o 'levimc-kit [^"]*' | head -1)
+          echo "live: $have · published: $want"
+          echo "stale=$([ "$want" != "$have" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: kit
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.kit.outputs.stale == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -14,14 +34,13 @@ jobs:
         with:
           node-version: 24
 
-      # site/ is generated from kit/, scripts/legacy-redirects.mjs and legacy/; fail if it was not regenerated.
-      - run: node scripts/build-site.mjs --check
+      - run: node scripts/fetch-kit.mjs
 
-      # Unit tests; with CI set they skip their own site/ freshness test (the step above covers it).
+      # site/ is generated from kit/, scripts/legacy-redirects.mjs and legacy/
+      - run: node scripts/build-site.mjs
+
+      # Unit tests (forwarding rules, redirect pages, assets).
       - run: node --test "scripts/*.test.mjs"
-
-      # levimc-kit's own unit tests (cross-site preference cookies, locale mapping, inline scripts); no dependencies.
-      - run: node --test "kit/tests/*.test.mjs"
 
       - uses: actions/upload-pages-artifact@v5
         with:
@@ -29,6 +48,7 @@ jobs:
 
   deploy:
     needs: build
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     concurrency:
       group: pages
