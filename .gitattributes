@@ -1,0 +1,4 @@
+# Generated pages are compared byte for byte (node scripts/build-site.mjs --check): keep LF everywhere.
+* text=auto eol=lf
+*.png binary
+*.ico binary
