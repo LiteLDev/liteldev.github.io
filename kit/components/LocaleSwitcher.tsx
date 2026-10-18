@@ -55,7 +55,10 @@ export function LocaleSwitcher({ options, current, onSelect, persist = true, lin
   const t = uiStrings(cur?.lang, strings);
   const Link = (linkComponent ?? 'a') as ComponentType<LinkLikeProps>;
   if (!cur) return null;
-  const choose = (o: LocaleOption) => {
+  const choose = (o: LocaleOption, e: MouseEvent<HTMLElement>) => {
+    // A modified click on a link opens the other locale in a new tab/window and leaves this page as it is:
+    // it is not a choice, so the cross-site preference stays untouched (and this page does not re-render).
+    if (o.href !== undefined && (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0)) return;
     if (persist) writePref('lang', o.lang);
     onSelect?.(o.code, o);
   };
@@ -88,11 +91,11 @@ export function LocaleSwitcher({ options, current, onSelect, persist = true, lin
             'data-kit-lang-value': o.lang,
           };
           return o.href !== undefined ? (
-            <Link key={o.code} {...common} href={o.href} hrefLang={o.lang} onClick={() => choose(o)}>
+            <Link key={o.code} {...common} href={o.href} hrefLang={o.lang} onClick={(e: MouseEvent<HTMLAnchorElement>) => choose(o, e)}>
               {inner}
             </Link>
           ) : (
-            <button key={o.code} type="button" {...common} onClick={() => choose(o)}>
+            <button key={o.code} type="button" {...common} onClick={(e) => choose(o, e)}>
               {inner}
             </button>
           );

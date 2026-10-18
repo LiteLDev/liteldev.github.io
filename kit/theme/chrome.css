@@ -436,8 +436,11 @@
     text-transform: uppercase;
     color: var(--color-muted);
   }
-  /* static pages: the chrome waits (at most 1.5 s) for kit.js to translate it into the stored language */
-  .kit-chrome-pending :is(.kit-gbar-inner, .kit-footer-soil, .kit-skip-link) {
+  /* The page waits (at most 1.5 s) until it shows the visitor's language: static pages and single-locale docs
+     hide the chrome while kit.js / the app translates it (kit-chrome-pending); plain apps also hide <main>
+     until usePreferredLocale has re-rendered it (kit-content-pending). See createPrefsInitScript. */
+  .kit-chrome-pending :is(.kit-gbar-inner, .kit-footer-soil, .kit-skip-link),
+  .kit-content-pending main {
     visibility: hidden;
     animation: kit-chrome-reveal 0s linear 1.5s forwards;
   }

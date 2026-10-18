@@ -94,10 +94,12 @@ levimc-kit/
 │   └── icons/  grass.svg  nojs-dark.mjs  snippets.tsx  build-static.mjs
 ├── scripts/               serve-pages · linkcheck · url-parity · text-parity · smoke · shot · vendor · mkdocs-nav
 ├── tests/                 prefs.test.mjs (node --test: cookies, locale mapping, inline scripts) ·
+│                          static.test.mjs (no-JS dark CSS, kit.js: footer year, chrome-only translation) ·
 │                          cross-site.e2e.mjs (Playwright: preferences shared by levimc.org + docs.levimc.org)
 ├── demo/                  demo sites (not vendored): docs (suffix/directory/pymdownx), lip (folder/html/vitepress),
-│                          app/ (plain Vite + React app, the levimc.org / pkg.levimc.org shape)
-└── screens/               review screenshots (not vendored)
+│                          single (the docs as a single-locale site), app/ (plain Vite + React app, the
+│                          levimc.org / pkg.levimc.org shape); pinned package-lock.json
+└── screens/               review screenshots (not vendored, not published)
 ```
 
 ## Vendoring
@@ -111,7 +113,7 @@ node path/to/levimc-kit/scripts/vendor.mjs path/to/app/kit    # the same: a path
 
 `vendor.mjs` produces a clean copy: it skips `demo/`, `screens/`, `node_modules/`, `dist/`, `.kit/` and every
 dotfile, replaces `<app>/kit/` completely (re-running is idempotent) and writes `kit/.vendored` with the version.
-Kit 1.1.0: 207 files / 2.7 MB, no demo, screenshots or dependencies; running the vendored copy's own
+Kit 1.1.0: 209 files / 2.7 MB, no demo, screenshots or dependencies; running the vendored copy's own
 `kit/scripts/vendor.mjs <dest>` reproduces it byte for byte. `--dest <name>` changes the folder name.
 Never edit files under `kit/` in an app; change the kit and re-vendor. The demo vendors itself the same way
 (`cd demo && npm run vendor`). Every page the kit renders carries `<meta name="generator" content="levimc-kit 1.1.0">`,
@@ -350,8 +352,13 @@ move into the drawer). `header.tabsRow: true` starts in the two-row layout, `fal
   2. without one: not after an in-site link (an explicit "[English](/)" is followed as written), otherwise the
      first `navigator.languages` entry that matches a locale.
 * Deep links and explicit locale URLs are never redirected, and visiting them never changes the stored
-  preference — only the language menu does. Kit 1.0's per-site choice (`localStorage['levimc-locale-<site>']`)
-  is moved into the preference once.
+  preference — only the language menu does (a Ctrl/⌘/Shift/Alt-click opens the other locale elsewhere and
+  stores nothing). Kit 1.0's per-site choice (`localStorage['levimc-locale-<site>']`) is moved into the
+  preference once.
+* A site with a single locale: the bar's menu offers the 9 chrome languages; the LeviMC chrome (bar, footer, the
+  drawer's LeviMC links) follows the stored preference and switches in place when one is chosen — the content
+  stays in the site's language. The pre-paint script hides the chrome until then (`chromeLocales`), so it never
+  flashes in the site's language first (`demo/vite.single.config.ts`, `npm run smoke:single`).
 
 | Option | Type / default | Notes |
 |---|---|---|
@@ -422,8 +429,9 @@ kit transforms → Shiki → HTML). No markdown is parsed in the browser.
 ```
 
 `index.html` head: the pre-paint script must run before CSS paints — an inline `<script>` with
-`themeInitScript` (or `createThemeInitScript({ legacyTheme, legacyLang })` to migrate a site's old
-localStorage keys once, e.g. levimc.org: `{ legacyTheme: ['theme'], legacyLang: [{ key: 'locale', map: { zh: 'zh-CN' } }] }`),
+`createThemeInitScript({ appLocales: { locales: LOCALES, prerendered: 'en' } })` (the app's languages and the one
+its pages are prerendered in; add `legacyTheme` / `legacyLang` to migrate a site's old localStorage keys once,
+e.g. levimc.org: `{ legacyTheme: ['theme'], legacyLang: [{ key: 'locale', map: { zh: 'zh-CN' } }] }`),
 then the fonts (`FONT_HEAD_HTML` from `kit/components/fonts.ts`): preconnect to fonts.googleapis.com /
 fonts.gstatic.com and the css2 URL for Inter, Fraunces, Silkscreen, JetBrains Mono (`display=swap`; `theme/fonts.css`
 adds metric-matched fallbacks, so the swap does not shift the layout). CJK uses the system stack — never ship a
@@ -444,8 +452,15 @@ const [locale, setLocale] = usePreferredLocale(LOCALES, LOCALES[0]);   // the cr
 ```
 
 `usePreferredLocale` renders the fallback locale on the server and the first client render (no hydration
-mismatch), then switches to the preferred one. To avoid a flash of the fallback language, hide `#root` while
-`html[data-kit-lang-pref]` (set by the pre-paint script) maps to another locale, as levimc.org does.
+mismatch), then switches to the preferred one right after hydration, before the next paint. So that a visitor
+whose language is not the prerendered one never sees it first, the pre-paint script with `appLocales` (same
+locales, same mapping: the stored preference, else `navigator.languages`) adds `html.kit-chrome-pending` and
+`html.kit-content-pending` exactly when the app will switch: the bar's contents, `<main>` and the footer text are
+`visibility: hidden` (no layout shift; the theme and backdrop already show) until `usePreferredLocale` has
+re-rendered and removes both classes (`revealPendingChrome()`). A CSS fail-safe shows the page after 1.5 s if
+the app's JavaScript never runs. Keep the locales in one module that `vite.config.ts` and the app both import
+(`demo/app/src/locales.ts`). `smoke.mjs --app` fails if a stored `zh-CN` preference paints the prerendered
+language.
 
 ```tsx
 // src/entry-server.tsx
@@ -506,7 +521,7 @@ All components are SSR-safe and render identical markup on server and client.
 | `GlobalBar` | the bar at the top of every LeviMC site — identical everywhere: tabs **Home · Projects · Docs ▾ · Mods · Blog · Community · About** (`globalNav()`), then **language menu · theme menu · GitHub**; below 960px the tabs fold into one menu (≤ 400px the triggers lose their chevrons). Props: `current` (`'home'\|'projects'\|'docs'\|'packages'\|'blog'\|'community'\|'about'`), `currentDocs`, `locale`, `strings`, `languages` (`{ options, current, onSelect?, linkComponent? }`; omitted → the 9 chrome languages, stored as the preference, then `onLanguageChange` or a reload), `github` (button target), `brandIcon`, `siteOrigin` + `linkComponent` + `isAppPath` (same-site links through the router), `menu` (false when the site's own drawer carries the links, see `GlobalNavList`), `sticky`. A labelled region; `<details>` menus work without JS. No props to hide, add or reorder tabs or controls |
 | `GlobalNavList` | the bar's tabs + docs projects as a vertical list (the bar's phone menu; the "LeviMC" part of the docs drawer) |
 | `ThemeSwitcher` | the theme menu: **Auto** (default; follows `prefers-color-scheme` live) / Light / Dark. Trigger sprite + name and the checked item come from `html[data-theme-pref]` via CSS (right before hydration and on static pages); the choice is the cross-site `levimc_theme` cookie. `ThemeToggle` is a deprecated alias |
-| `LocaleSwitcher` | `options[{ code, label, short?, lang, href? }]` (`href` → links to the equivalent page; none → buttons), `current`, `onSelect(code, option)`, `persist` (default: store `lang` as the cross-site `levimc_lang`), `linkComponent`, `showLabel` |
+| `LocaleSwitcher` | `options[{ code, label, short?, lang, href? }]` (`href` → links to the equivalent page; none → buttons), `current`, `onSelect(code, option)`, `persist` (default: store `lang` as the cross-site `levimc_lang`; a modified click on a link opens it elsewhere and stores nothing), `linkComponent`, `showLabel` |
 | `SiteFooter` | grass horizon over soil: docs projects, ecosystem (Home, Projects, Mods, Blog, About), Discord/Telegram/X/YouTube/email/GitHub, "Not affiliated with Mojang Studios."; `strings` (e.g. a site's own nav labels), `extra`, `copyright` (replaces "© <year> LeviMC"), `year`, `siteOrigin` + `linkComponent` + `isAppPath`, `locale` |
 | `PaintedBackdrop` | fixed impressionist dabs + brush + grain; optional painted scene band at the page top |
 | `PaintedHero` | painted pond with block-built Japanese bridge (light) / harbour sunrise with pixel boats (dark), AA scrim, grass horizon; `eyebrow name text tagline actions image badge aside linkComponent`. The default scenes are cached CSS backgrounds (`theme/hero.css`, imported by the component — no per-page SVG, no flash); a custom `seed` or `pixelProps={false}` renders inline SVG |
@@ -517,7 +532,8 @@ All components are SSR-safe and render identical markup on server and client.
 | `HotbarTabs`, `Pagination` | hotbar-style tabs (WAI-ARIA keyboard) and numbered pagination (crawlable hrefs) |
 | `PixelIcon`, `BrandIcon` | 16×16 crisp sprites (`PIXEL_ICONS`); vector brand marks for social links |
 | `prefs.ts` | `readPref`/`writePref`, `readThemeChoice`, `readLanguagePreference`, `preferredLanguages`, `matchLocale`, `pickLocale`, `createPrefsInitScript`, `prefCookieDomain`, `serializePrefCookie`, `PREFS_CORE_JS` |
-| `locale.ts` | `usePreferredLocale(locales, fallback)` → `[locale, setLocale]` for apps whose language is state |
+| `locale.ts` | `usePreferredLocale(locales, fallback)` → `[locale, setLocale]` for apps whose language is state (syncs before paint, then `revealPendingChrome()`) |
+| `menu.ts` | `useDismissableDetails(ref)` for every `<details class="kit-menu">`: outside click, Escape, focus leaving, one open at a time; `role="menu"` panels (language, theme) get the WAI-ARIA menu keys — Enter/Space open on the checked item, ArrowDown/ArrowUp on the trigger open on the first/last item, inside Arrow keys move (wrapping), Home/End jump (`menuKey`, `focusMenuOnOpen`; kit.js does the same on static pages) |
 | `theme.ts` | `ThemeProvider`, `useTheme()` (`preference`, `resolved`, `setPreference`), `themeInitScript`, `createThemeInitScript(opts)`, `applyThemePreference`; `'system'` is accepted as an alias of `'auto'` |
 | `projects.ts` | `LINKS`, `DOCS_PROJECTS`, `MODS_SITE`, `SOCIAL`, `globalNav()`, `sameSitePath()` — the redirect-free canonical cross-site URLs |
 | `i18n.ts` | `uiStrings(lang, overrides)`, `resolveUiLocale(tag)`, `UI_LOCALE_NAMES` for en, zh-CN, zh-HK, es, ru, de, ja, ko, fr |
@@ -548,9 +564,14 @@ YouTube `https://www.youtube.com/@LeviLamina`, `mailto:contact@levimc.org`. lip'
 * `globalbar.html`, `footer.html` (+ `i18n/*.<locale>.html`) — rendered from the React components, with
   `data-kit-t` hooks for the runtime translation.
 * `kit.js` (built from `kit.src.js`) — the GlobalBar's theme and language menus, `<details>` menus (outside
-  click, Escape, focus leaving), the footer year, and the chrome language: the bar, footer and skip link follow
-  the visitor's language preference (strings for the 9 UI locales are embedded); choosing a language stores it
-  for every LeviMC site and translates the chrome in place. Page content stays as written.
+  click, Escape, focus leaving, the menu keys of `menu.ts`), the footer year, and the chrome language: the bar,
+  footer and skip link follow the visitor's language preference (strings for the 9 UI locales are embedded; each
+  translated part gets `lang=<locale>`); choosing a language stores it for every LeviMC site and translates the
+  chrome in place. Only the chrome is translated — page content stays as written, including copies of chrome
+  strings in it (the 404 page's project cards stay English like the rest of the page). On Doxygen pages it also
+  follows the preference in the project's own row (`data-kit-site-locales` / `data-kit-l10n`: LeviLamina's zh
+  section labels and URLs), turns Doxygen's regions into landmarks (`#main-nav`, `#side-nav`, `#doc-content` as
+  `main`, `#nav-path`) and moves Doxygen's phone menu button + search into the row.
 * `theme-init.js` (React apps), `theme-init-static.js` (static pages: also hides the chrome for ≤ 1.5 s while
   kit.js translates it, so it never flashes in English), `theme-init-doxygen.js` — blocking head scripts.
 * `pages/index.html` (docs.levimc.org root → levimc.org redirect, redirect tags before any stylesheet, with
@@ -568,9 +589,16 @@ HTML_EXTRA_FILES       = kit/static/kit.js
 ```
 
 Drop `doxygen-awesome-darkmode-toggle.js` (kit.js owns the theme and keeps `html.dark-mode` /
-`html.light-mode` in sync for doxygen-awesome v2.4.1). The header carries the full GlobalBar (language and
-theme menus, GitHub → LeviLamina) above Doxygen's own layers. Verified with doxygen 1.16.1 +
-doxygen-awesome-css 2.4.1 in both themes (`screens/doxygen-*.png`).
+`html.light-mode` in sync for doxygen-awesome v2.4.1). The header is the docs pages' one header: the GlobalBar
+(language and theme menus, GitHub → LeviLamina; its own phone menu off) above Doxygen's layers, then one
+light row (`header#titlearea`) with LeviLamina's logo + name, its docs sections (Home · User Guides · Developer
+Guides · Maintainer Guides · Supported Versions, linking into the docs) plus an active **Doxygen API** tab, and
+Doxygen's search box — no painted title band, no second menubar: Doxygen's Main Page / Related Pages / Classes /
+Files menubar is hidden from 768px (the tree on the left lists the same pages). 768–1199px: the sections get
+their own row under logo + search. Phones: Doxygen's menu button is the only one; it opens one panel with the
+docs sections, Doxygen's menu and the LeviMC links. The sections are configured in `DOX` in
+`static/build-static.mjs`. Verified with doxygen 1.16.1 + doxygen-awesome-css 2.4.1 in both themes at 1440,
+1024 and 390px (`screens/kit-doxygen-*.png`).
 
 ## Verification scripts
 
@@ -608,6 +636,8 @@ node kit/scripts/shot.mjs <url> <out.png> [light|dark] [w] [h] [--full]
 Both smoke modes check the unified chrome: the GlobalBar's canonical tabs (in order, with their canonical
 URLs) and controls (language · theme · GitHub), Auto as the default theme following the system live, theme and
 language stored in the `levimc_theme` / `levimc_lang` cookies and applied after a reload from the cookie alone,
+the menu keys of the theme and language menus, no paint of the prerendered language for a stored `zh-CN`
+preference (apps and single-locale docs: the chrome and `<main>` stay hidden until they switch),
 the 390px layout (controls visible, exactly one menu button whose menu holds every bar link and the five docs
 projects, no sideways scroll), no console or hydration errors and the themed 404. Docs mode adds SPA
 navigation, the docs header (no duplicated controls, sticky while the bar scrolls away), Ctrl+K search, the
@@ -714,8 +744,10 @@ External link verdicts: `ok`, `ok-redirect` (`/releases/latest` and allow-listed
   105 KB / 168 KB gzipped; loaded only when search is opened).
 * The theme menu trigger's `aria-label` is the generic "Theme" until hydration (kit.js: until it runs); its
   sprite, visible state name and the checked item are correct immediately (CSS from `html[data-theme-pref]`).
-* A docs site with a single locale keeps its chrome in that locale; the bar's language menu still stores the
-  preference for the other sites.
+* The "language pending" hiding (apps, single-locale docs, static pages) has a 1.5 s fail-safe: when the
+  scripts take longer, the prerendered language shows until they run.
+* Doxygen's own markup keeps a few axe findings the kit does not touch: icon-only links in the tree
+  (`link-name`), no `<h1>`, and doxygen-awesome's floating TOC outside the landmarks (`region`).
 * Language preferences stored by pre-kit sites under their own keys (e.g. VitePress's `levilauncher-docs-locale`)
   are not read; kit 1.0's `levimc-locale-<site>` keys and the 1.0 theme key are migrated.
 * `lastUpdated` needs git history (`fetch-depth: 0` in CI).
@@ -731,11 +763,15 @@ External link verdicts: `ok`, `ok-redirect` (`/releases/latest` and allow-listed
   components, the theme CSS, `prefs.ts` or `i18n.ts`.
 * Demo: `cd demo && npm ci && npm run vendor && npm run typecheck && npm test && npm run build && npm run preview`,
   then `npm run linkcheck`, `npm run smoke`; the folder-mode lip demo: `npm run build:lip && npm run preview:lip`;
-  the plain app: `npm run build:app && npm run preview:app && npm run smoke:app`; cross-site:
-  `node kit/tests/cross-site.e2e.mjs --app app/dist --docs dist`.
+  the single-locale docs: `npm run build:single && npm run preview:single && npm run smoke:single`; the plain app:
+  `npm run build:app && npm run preview:app && npm run smoke:app`; cross-site:
+  `node kit/tests/cross-site.e2e.mjs --app app/dist --docs dist`. `demo/package-lock.json` pins the dependency
+  set the kit is verified with; the demo's `kit/` is the vendored copy (`npm run vendor`, git-ignored).
 * Bump `VERSION` and `components/version.ts` together on every change that consumers must re-vendor (the tests
   and build-static check they agree), and add a [Changelog](#changelog) entry with migration notes.
-* The published copy lives in LiteLDev/liteldev.github.io under `kit/` (vendored form, no `demo/`).
+* The kit is published in LiteLDev/liteldev.github.io under `kit/`, with its `demo/` (sources and lockfile;
+  `vendor.mjs` leaves `demo/` out of every site copy). Its CI (`.github/workflows/kit.yml`) runs the unit tests and
+  builds, type-checks and link-checks every demo; `screens/` is not published.
 
 ## Changelog
 
@@ -766,8 +802,22 @@ External link verdicts: `ok`, `ok-redirect` (`/releases/latest` and allow-listed
   paint and on resize (`html[data-kit-nav-fit]`: icon search → tabs row → drawer; `header.tabsRow`). Phones:
   one menu button, one drawer with the sections, the sidebar and the LeviMC links.
 * Static pages and Doxygen get the same bar with working language and theme menus: `kit.js` (now generated
-  from `kit.src.js`) translates the chrome into the stored language (9 UI locales) and stores choices
-  cross-site; `theme-init-static.js` keeps the chrome hidden ≤ 1.5 s while it does, so it never flashes.
+  from `kit.src.js`) translates the chrome — and only the chrome — into the stored language (9 UI locales) and
+  stores choices cross-site; `theme-init-static.js` keeps the chrome hidden ≤ 1.5 s while it does, so it never
+  flashes.
+* Doxygen header redesigned as the docs pages' one header: GlobalBar (menu off) + one light row with the
+  project's logo and name, its docs sections plus an active "Doxygen API" tab, and Doxygen's search; the
+  painted title band and Doxygen's menubar are gone (the tree has the same entries); phones get one menu
+  button whose panel holds the sections, Doxygen's menu and the LeviMC links; Doxygen's regions are landmarks.
+* No flash of the prerendered language: `createPrefsInitScript({ appLocales })` + `usePreferredLocale` for
+  plain apps (the page waits, ≤ 1.5 s, until it shows the visitor's language), the same for the chrome of
+  single-locale docs sites — which now follows the stored preference in place.
+* Language and theme menus have the WAI-ARIA menu keys (Arrow keys, Home/End, focus on the checked item when
+  opened from the keyboard) in React and in kit.js.
+* Docs pages without JavaScript follow a dark system theme (the build emits `assets/kit-nojs-dark.<hash>.css`
+  from the site stylesheet, loaded inside `<noscript>`), like the static pages.
+* Hero pages look the same under the docs row: a page with a `PaintedHero` never also shows the backdrop's
+  scene band (home layout, custom layouts, apps).
 
 **Renames.** pkg.levimc.org is **LeviMC Mods**: bar/footer label "Mods" (en/es/de/fr), "模组" (zh-CN), "模組"
 (zh-HK), "MOD" (ja), "모드" (ko), "Моды" (ru); `modsName` / `modsBlurb` strings ("LeviMC Mods" / "LeviMC 模组" /
@@ -856,13 +906,18 @@ Site-specific notes:
 * **levimc.org** — drop the GlobalBar/LocaleSwitcher patches; `<GlobalBar sticky siteOrigin="https://levimc.org"
   linkComponent={RouterLink} isAppPath={(p) => !p.startsWith('/blog/')} brandIcon={…} languages={{ options
   (with short "EN"/"ZH"), current, onSelect }} />`; drop `.lm-banner` sticky and `.lm-gbar-locale` CSS; prepaint:
-  `createThemeInitScript({ legacyTheme: ['theme'], legacyLang: [{ key: 'locale', map: { en: 'en', zh: 'zh-CN' } }] })`
-  and read the locale from the preference; hero badge/code card via `PaintedHero badge` / `aside` (drop the
-  `order:-1` / absolute positioning); footer labels via `SiteFooter strings`.
+  `createThemeInitScript({ appLocales: { locales: LOCALES, prerendered: 'en' }, legacyTheme: ['theme'], legacyLang:
+  [{ key: 'locale', map: { en: 'en', zh: 'zh-CN' } }] })` (LOCALES shared by `vite.config.ts` and the app) and read
+  the locale with `usePreferredLocale`; drop any own `#root`-hiding CSS for the language switch; hero badge/code
+  card via `PaintedHero badge` / `aside` (drop the `order:-1` / absolute positioning); footer labels via
+  `SiteFooter strings`.
 * **pkg.levimc.org** — drop the prerender patch and the `--px-drop` / `.kit-code code` overrides;
-  `current="packages"`, languages en / zh-CN / zh-HK with `usePreferredLocale`; TypeScript 6.0.3 is fine.
+  `current="packages"`, languages en / zh-CN / zh-HK with `usePreferredLocale` and the same locales as
+  `appLocales` in the pre-paint script (no English flash for zh visitors); TypeScript 6.0.3 is fine.
 * **LeviLamina** — drop all `[kit patch: …]` code; `header: { tabsRow: true }` can go (`'auto'` keeps one row at
-  1440px and wraps only when needed); re-copy the Doxygen header/footer from `kit/static/doxygen/`.
+  1440px and wraps only when needed); point the Doxyfile at the new `kit/static/doxygen/` header/footer/CSS and
+  `kit/static/kit.js` again (the header's sections mirror `docs.config.ts` — update `DOX` in
+  `kit/static/build-static.mjs` when the top-level nav changes).
 * **LegacyScriptEngine** — drop the patches; the `collapsed: true` marks on API groups are now the default
   (harmless to keep).
 * **lip, LeviLauncher, LeviLaunchroid** — drop the patches; LeviLaunchroid's referrer/remember-locale

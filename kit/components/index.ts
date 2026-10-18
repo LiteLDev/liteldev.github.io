@@ -67,5 +67,5 @@ export { UI_LOCALES, UI_STRINGS, UI_LOCALE_NAMES, resolveUiLocale, uiStrings, ty
 export { GOOGLE_FONTS_HREF, FONT_HEAD_HTML } from './fonts';
 export { KIT_VERSION, KIT_GENERATOR, GENERATOR_META } from './version';
 export { useDismissableDetails } from './menu';
-export { usePreferredLocale, type AppLocale } from './locale';
+export { usePreferredLocale, revealPendingChrome, type AppLocale } from './locale';
 export { lilyPond, harborSunrise, sceneToSvg, type Scene, type Shape } from './paint';

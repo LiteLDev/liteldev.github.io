@@ -211,6 +211,62 @@ await check('language: the choice is stored in the cross-site cookie and applied
   await c.close();
   return `${lang} (${isLink ? `equivalent page ${landed}` : 'in place'}); after reload: "${shown}"`;
 });
+await check('theme / language menus: Enter focuses the checked item, arrows / Home / End move, Escape returns', async () => {
+  const p = await ctx.newPage();
+  await p.goto(pages[0] ?? base, { waitUntil: 'networkidle' });
+  const focused = () => p.evaluate(() => document.activeElement?.getAttribute('data-kit-theme-value') ?? document.activeElement?.getAttribute('data-kit-lang-value') ?? document.activeElement?.tagName);
+  await p.locator('[data-kit-theme-toggle]').first().focus();
+  await p.keyboard.press('Enter');
+  await p.waitForTimeout(100);
+  const steps = [await focused()];
+  for (const k of ['ArrowDown', 'ArrowDown', 'ArrowDown', 'End', 'Home', 'ArrowUp']) {
+    await p.keyboard.press(k);
+    steps.push(await focused());
+  }
+  assert(steps.join(' ') === 'auto light dark auto dark auto dark', `theme menu focus: ${steps.join(' → ')}`);
+  await p.keyboard.press('Escape');
+  assert(await p.evaluate(() => document.activeElement?.hasAttribute('data-kit-theme-toggle')), 'Escape did not return focus to the trigger');
+  // ArrowDown on the closed language trigger opens it on the first language
+  await p.locator('[data-kit-locale-switcher]').first().focus();
+  await p.keyboard.press('ArrowDown');
+  const first = await p.evaluate(() => document.activeElement?.matches('.kit-gbar [data-kit-lang-value]') && document.activeElement === document.querySelector('.kit-gbar [data-kit-lang-value]'));
+  assert(first, 'ArrowDown on the language trigger did not open the menu on its first item');
+  await p.keyboard.press('Escape');
+  await p.close();
+  return steps.join(' → ');
+});
+await check('language: a stored preference never paints the prerendered language first', async () => {
+  const c = await newCtx();
+  await c.addCookies([{ name: 'levimc_lang', value: 'zh-CN', url: base }]);
+  const start = pages[0] ?? base;
+  const tab = () => {
+    const b = document.querySelector('.kit-gbar-link');
+    const m = document.querySelector('main');
+    // hidden = the pre-paint script's "language pending" classes (the CSS fail-safe reveals them after 1.5 s, so
+    // reading computed visibility would depend on how fast the runner is)
+    const c = document.documentElement.classList;
+    return {
+      text: b?.textContent ?? '',
+      bar: !!b && !c.contains('kit-chrome-pending') && getComputedStyle(b).visibility === 'visible',
+      main: !!m && !c.contains('kit-content-pending') && getComputedStyle(m).visibility === 'visible',
+    };
+  };
+  // what the page shows once it ran …
+  const p = await c.newPage();
+  await p.goto(start, { waitUntil: 'networkidle' });
+  const after = await p.evaluate(tab);
+  // … and what it paints before its scripts (only the inline pre-paint script runs)
+  const q = await c.newPage();
+  await q.route(/\.m?js(\?|$)/, (r) => r.abort());
+  await q.goto(start, { waitUntil: 'domcontentloaded' });
+  const before = await q.evaluate(tab);
+  await c.close();
+  if (before.text === after.text) return `the prerendered chrome already reads "${after.text}"`;
+  assert(!before.bar, `the bar painted "${before.text}" before switching to "${after.text}"`);
+  if (APP) assert(!before.main, `<main> painted in the prerendered language before switching to "${after.text}"`);
+  assert(after.bar && (!APP || after.main), 'the page stayed hidden after its scripts ran');
+  return `hidden until it reads "${after.text}" (prerendered "${before.text}")`;
+});
 await check('phone (390px): bar controls visible, one menu with the bar links, no sideways scroll', async () => {
   const m = await newCtx({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const p = await m.newPage();

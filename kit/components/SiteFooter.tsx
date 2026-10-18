@@ -52,7 +52,7 @@ export function SiteFooter({ locale, strings, extra, copyright, year = BUILD_YEA
   const t = uiStrings(locale, strings);
   const nav: NavCtx = { siteOrigin, linkComponent, isAppPath };
   return (
-    <footer className={className ? `kit-footer ${className}` : 'kit-footer'} data-kit-footer="">
+    <footer className={className ? `kit-footer ${className}` : 'kit-footer'} data-kit-footer="" lang={locale}>
       <div className="grass-divider" aria-hidden="true" />
       <div className="kit-footer-soil">
         <div className="kit-footer-inner">

@@ -207,12 +207,26 @@ export function createPrefsInitScript(
      * footer text until kit.js has translated them (at most 1.5 s), so the chrome never flashes in English.
      */
     chromeLocales?: readonly string[];
+    /**
+     * Plain apps whose language is state (`usePreferredLocale`, locale.ts): the app's locales and the
+     * `code` of the one its pages are prerendered in. When the visitor's language (the stored preference, else
+     * navigator.languages — exactly what usePreferredLocale picks, see {@link pickLocale}) maps to another
+     * locale, html.kit-chrome-pending + html.kit-content-pending hide the bar, <main> and the footer
+     * (visibility only: no layout shift) until the app has re-rendered in that language — usePreferredLocale
+     * removes both classes right after its first sync, before the next paint (CSS fail-safe: 1.5 s).
+     */
+    appLocales?: { locales: readonly { code: string; lang: string }[]; prerendered: string };
   } = {},
 ): string {
   const legacyTheme = opts.legacyTheme ?? [];
   const legacyLang = opts.legacyLang ?? [];
   const chrome = opts.chromeLocales?.length
     ? `if(l){var C=${JSON.stringify(opts.chromeLocales.map((c) => ({ c, l: c })))},a=ml(l,C),z=ml(d.lang||"en",C);if(a<0)a=0;if(z<0)z=0;if(a!==z)d.classList.add("kit-chrome-pending")}`
+    : '';
+  const app = opts.appLocales?.locales.length
+    ? `var A=${JSON.stringify(opts.appLocales.locales.map(({ code, lang }) => ({ c: code, l: lang })))},n=navigator,T=l?[l]:n.languages&&n.languages.length?n.languages:[n.language||""],x=-1;` +
+      `for(i=0;i<T.length&&x<0;i++)x=ml(T[i],A);if(x<0)for(i=0;i<A.length&&x<0;i++)if(A[i].l.toLowerCase().split("-")[0]==="en")x=i;` +
+      `if(x>=0&&A[x].c!==${JSON.stringify(opts.appLocales.prerendered)}){d.classList.add("kit-chrome-pending");d.classList.add("kit-content-pending")}`
     : '';
   return (
     `(function(){try{${PREFS_CORE_JS}var d=document.documentElement,s=pls(),p=rp("theme"),q,i,o;` +
@@ -225,6 +239,6 @@ export function createPrefsInitScript(
     `if(p!=="light"&&p!=="dark")p="auto";var k=p==="dark"||(p==="auto"&&!!(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches));` +
     `d.classList.toggle("dark",k);` +
     (opts.doxygen ? `d.classList.toggle("dark-mode",k);d.classList.toggle("light-mode",!k);` : '') +
-    `d.setAttribute("data-theme-pref",p);d.style.colorScheme=k?"dark":"light";var l=rp("lang");if(l)d.setAttribute("data-kit-lang-pref",l);${chrome}}catch(e){}})();`
+    `d.setAttribute("data-theme-pref",p);d.style.colorScheme=k?"dark":"light";var l=rp("lang");if(l)d.setAttribute("data-kit-lang-pref",l);${chrome}${app}}catch(e){}})();`
   );
 }

@@ -19,19 +19,22 @@ export function MobileDrawer({
   onClose,
   route,
   locale,
-  lang,
   sidebar,
   path,
   t,
+  chromeLang,
+  chromeT,
 }: {
   open: boolean;
   onClose: () => void;
   route?: RouteMeta;
   locale: string;
-  lang: string;
   sidebar?: SidebarData;
   path: string;
   t: UiStrings;
+  /** Language and strings of the LeviMC chrome — the same the bar gets, so its links read the same here. */
+  chromeLang: string;
+  chromeT: UiStrings;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useFocusTrap(ref, open, onClose);
@@ -115,11 +118,12 @@ export function MobileDrawer({
             <Sidebar data={sidebar} path={path} label={t.sidebarNav} onNavigate={onClose} />
           </div>
         ) : null}
-        <nav className="kit-drawer-network" aria-label={t.network}>
+        <nav className="kit-drawer-network" aria-label={chromeT.network} lang={chromeLang}>
           <GlobalNavList
             current="docs"
             currentDocs={site.project}
-            locale={lang}
+            locale={chromeLang}
+            strings={chromeT}
             heading={
               <p className="kit-drawer-network-title">
                 <PixelIcon name="grass" size={16} />

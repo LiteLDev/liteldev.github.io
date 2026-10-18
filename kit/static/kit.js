@@ -74,23 +74,32 @@
   }
 
   // ------------------------------------------------------------------ language (chrome only)
+  // Only the chrome is translated: the bar, the footer, the skip link (each gets lang=<code>). The page's own
+  // content — including copies of chrome strings in it, e.g. project blurbs on the 404 page — stays as written.
+  var CHROME = '.kit-gbar, .kit-footer, .kit-skip-link, .kit-dox-drawer-network';
+  function inChrome(el) {
+    return el.matches(CHROME) || !!el.closest(CHROME);
+  }
   function translate(code) {
     var S = STR[code];
     if (!S) return;
     each('[data-kit-t]', function (el) {
+      if (!inChrome(el)) return;
       var k = el.getAttribute('data-kit-t');
       var v = k.indexOf('projectBlurbs.') === 0 ? S.projectBlurbs[k.slice(14)] : S[k];
       if (typeof v === 'string') el.textContent = v;
     });
     each('[data-kit-t-aria]', function (el) {
+      if (!inChrome(el)) return;
       var v = S[el.getAttribute('data-kit-t-aria')];
       if (typeof v === 'string') el.setAttribute('aria-label', v);
     });
     each('[data-kit-t-title]', function (el) {
+      if (!inChrome(el)) return;
       var v = S[el.getAttribute('data-kit-t-title')];
       if (typeof v === 'string') el.setAttribute('title', v);
     });
-    each('.kit-gbar, .kit-footer, .kit-skip-link', function (el) {
+    each(CHROME, function (el) {
       el.setAttribute('lang', code);
     });
     // the language menu: check the new language, move the check mark, relabel the trigger
@@ -118,10 +127,47 @@
     });
     labelTheme();
   }
+  // A project's own row on its Doxygen pages (static/doxygen/header.html): its section tabs follow the
+  // preference too, mapped to the project's locales (<… data-kit-site-locales='[{"c":"zh","l":"zh"}]'>; each
+  // <a data-kit-l10n='{"zh":["用户指南","/LeviLamina/zh/…"]}'> carries its other-locale label and URL).
+  function localizeSite(pref) {
+    each('[data-kit-site-locales]', function (row) {
+      var L;
+      try {
+        L = JSON.parse(row.getAttribute('data-kit-site-locales'));
+      } catch (e) {
+        return;
+      }
+      var i = pref ? ml(pref, L) : -1;
+      var loc = i < 0 ? null : L[i];
+      var links = row.querySelectorAll('[data-kit-l10n]');
+      for (var j = 0; j < links.length; j++) {
+        var a = links[j];
+        var m;
+        try {
+          m = JSON.parse(a.getAttribute('data-kit-l10n'));
+        } catch (e) {
+          continue;
+        }
+        // a value is [label, url], or just the url (links whose content is not text, e.g. the logo)
+        var hrefOnly = false;
+        for (var k in m) if (typeof m[k] === 'string') hrefOnly = true;
+        if (!a.hasAttribute('data-kit-l10n-default')) a.setAttribute('data-kit-l10n-default', JSON.stringify([hrefOnly ? null : a.textContent, a.getAttribute('href')]));
+        var d = JSON.parse(a.getAttribute('data-kit-l10n-default'));
+        var x = loc ? m[loc.c] : null;
+        var v = x ? (hrefOnly ? [null, x] : x) : d;
+        if (v[0] !== null) a.textContent = v[0];
+        a.setAttribute('href', v[1]);
+        if (x && !hrefOnly) a.setAttribute('lang', loc.l);
+        else a.removeAttribute('lang');
+      }
+    });
+  }
   function applyLanguagePref() {
     var p = rp('lang');
     var code = p ? uiLocale(p) : null;
     if (code && code !== chromeLocale() && document.querySelector('[data-kit-lang-value]')) translate(code);
+    localizeSite(p);
     root.classList.remove('kit-chrome-pending');
   }
 
@@ -133,10 +179,14 @@
       applyTheme(th.getAttribute('data-kit-theme-value'), true);
     }
     var lg = t && t.closest('[data-kit-lang-value]');
-    if (lg) {
+    // a modified click on a link opens it elsewhere: not a choice, the preference stays as it is
+    if (lg && !(lg.tagName === 'A' && (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0))) {
       var code = lg.getAttribute('data-kit-lang-value');
       wp('lang', code);
-      if (lg.tagName === 'BUTTON') translate(uiLocale(code));
+      if (lg.tagName === 'BUTTON') {
+        translate(uiLocale(code));
+        localizeSite(code);
+      }
     }
     // close <details class="kit-menu"> when clicking outside or choosing an item inside
     each('details.kit-menu[open]', function (d) {
@@ -151,13 +201,47 @@
       }
     });
   });
+  // menu keys for role="menu" panels (the language and theme menus; copy of components/menu.ts menuKey):
+  // ArrowDown/ArrowUp on the trigger open the menu on the first/last item, inside they move (wrapping),
+  // Home/End jump; a menu opened with Enter/Space focuses its checked item
+  var pointerOpen = false;
+  function menuItems(d) {
+    var p = d.querySelector(':scope > [role="menu"]');
+    return p ? Array.prototype.slice.call(p.querySelectorAll('[role^="menuitem"]')) : [];
+  }
+  document.addEventListener('pointerdown', function (e) {
+    pointerOpen = !!(e.target && e.target.closest && e.target.closest('details.kit-menu'));
+  });
   document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-    each('details.kit-menu[open]', function (d) {
-      d.open = false;
-      var s = d.querySelector('summary');
-      if (s) s.focus();
-    });
+    pointerOpen = false;
+    if (e.key === 'Escape') {
+      each('details.kit-menu[open]', function (d) {
+        d.open = false;
+        var s = d.querySelector('summary');
+        if (s) s.focus();
+      });
+      return;
+    }
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var d = e.target && e.target.closest ? e.target.closest('details.kit-menu') : null;
+    if (!d) return;
+    var items = menuItems(d);
+    if (!items.length) return;
+    var sum = e.target.closest('summary');
+    var onTrigger = !!sum && sum.parentNode === d;
+    var i = items.indexOf(document.activeElement);
+    var n = items.length;
+    var next;
+    if (e.key === 'ArrowDown') next = i < 0 ? 0 : (i + 1) % n;
+    else if (e.key === 'ArrowUp') next = i < 0 ? n - 1 : (i - 1 + n) % n;
+    else if ((e.key === 'Home' || e.key === 'End') && d.open && !onTrigger) next = e.key === 'Home' ? 0 : n - 1;
+    else return;
+    if (!d.open) {
+      if (!onTrigger) return;
+      d.open = true;
+    }
+    e.preventDefault();
+    items[next].focus();
   });
   // tabbing out of an open menu closes it
   document.addEventListener('focusout', function (e) {
@@ -175,6 +259,13 @@
       each('details.kit-menu[open]', function (o) {
         if (o !== d && !o.contains(d)) o.open = false;
       });
+      var items = menuItems(d);
+      if (!pointerOpen && items.length && document.activeElement === d.querySelector(':scope > summary')) {
+        var c = null;
+        for (var i = 0; i < items.length; i++) if (items[i].getAttribute('aria-checked') === 'true') c = c || items[i];
+        (c || items[0]).focus();
+      }
+      pointerOpen = false;
     },
     true,
   );
@@ -195,6 +286,39 @@
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') resync();
   });
+
+  // Doxygen: its regions become landmarks, and its phone menu button + search, which menu.js inserts before
+  // #main-nav, move into the project's row (header#titlearea) where they are shown — so everything on the page
+  // is inside a landmark. A MutationObserver catches the insertion before it is painted.
+  var dtop = document.getElementById('top');
+  var drow = document.getElementById('titlearea');
+  if (doxygen && dtop && drow && drow.classList.contains('kit-dox-row')) {
+    // landmarks for Doxygen's own regions (it emits plain <div>s)
+    var LANDMARKS = [
+      ['main-nav', 'navigation', 'Doxygen'],
+      ['side-nav', 'navigation', 'Index'],
+      ['doc-content', 'main', ''],
+      ['nav-path', 'navigation', 'Breadcrumb'],
+    ];
+    for (var li = 0; li < LANDMARKS.length; li++) {
+      var le = document.getElementById(LANDMARKS[li][0]);
+      if (le && !le.hasAttribute('role') && !(LANDMARKS[li][1] === 'main' && document.querySelector('main, [role="main"]'))) {
+        le.setAttribute('role', LANDMARKS[li][1]);
+        if (LANDMARKS[li][2]) le.setAttribute('aria-label', LANDMARKS[li][2]);
+      }
+    }
+    var adopt = function () {
+      var m = dtop.querySelector(':scope > .sm-dox');
+      if (m) drow.appendChild(m);
+      return !!m;
+    };
+    if (!adopt() && window.MutationObserver) {
+      var mo = new MutationObserver(function () {
+        if (adopt()) mo.disconnect();
+      });
+      mo.observe(dtop, { childList: true });
+    }
+  }
 
   // footer year follows the reader's clock (the snippet carries the year it was built in)
   var y = new Date().getFullYear();

@@ -209,6 +209,34 @@ test('pre-paint (static pages): chrome waits for kit.js when the stored language
   assert.ok(!run(script, browserEnv({ cookies: [{ name: 'levimc_lang', value: 'en-GB', domain: 'levimc.org' }] })).classes.has('kit-chrome-pending'));
   assert.ok(!run(script, browserEnv()).classes.has('kit-chrome-pending'));
 });
+test('pre-paint (plain apps): the page waits for usePreferredLocale exactly when it will pick another locale', () => {
+  const locales = [
+    { code: 'en', lang: 'en' },
+    { code: 'zh-CN', lang: 'zh-CN' },
+    { code: 'zh-HK', lang: 'zh-HK' },
+  ];
+  const script = createPrefsInitScript({ appLocales: { locales, prerendered: 'en' } });
+  const pending = (opts) => {
+    const c = run(script, browserEnv({ url: 'https://pkg.levimc.org/', ...opts })).classes;
+    assert.equal(c.has('kit-chrome-pending'), c.has('kit-content-pending'));
+    return c.has('kit-content-pending');
+  };
+  const lang = (value) => [{ name: 'levimc_lang', value, domain: 'levimc.org' }];
+  // the stored preference decides (mapped like pickLocale: zh-TW → zh-HK, fr → English)
+  assert.equal(pending({ cookies: lang('zh-TW') }), true);
+  assert.equal(pending({ cookies: lang('zh') }), true);
+  assert.equal(pending({ cookies: lang('en-GB') }), false);
+  assert.equal(pending({ cookies: lang('fr'), languages: ['zh-CN'] }), false, 'a stored preference wins over the browser');
+  // without one, the browser languages (what usePreferredLocale falls back to)
+  assert.equal(pending({ languages: ['zh-CN', 'en'] }), true);
+  assert.equal(pending({ languages: ['de-DE', 'zh-CN'] }), true, 'first matching browser language');
+  assert.equal(pending({ languages: ['de-DE'] }), false);
+  assert.equal(pending({ languages: [] }), false);
+  // an app prerendered in another locale
+  const zhFirst = createPrefsInitScript({ appLocales: { locales, prerendered: 'zh-CN' } });
+  assert.equal(run(zhFirst, browserEnv({ cookies: lang('zh-CN') })).classes.has('kit-content-pending'), false);
+  assert.equal(run(zhFirst, browserEnv({ languages: ['fr'] })).classes.has('kit-content-pending'), true, 'no match → English');
+});
 
 // ------------------------------------------------------------------ docs root language redirect
 const SITE = {

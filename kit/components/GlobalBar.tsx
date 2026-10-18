@@ -187,7 +187,7 @@ export function GlobalBar({
   };
 
   return (
-    <div className={cls} data-kit-globalbar="" role="region" aria-label="LeviMC">
+    <div className={cls} data-kit-globalbar="" role="region" aria-label="LeviMC" lang={locale}>
       <div className="kit-gbar-inner">
         <BarLink url={LINKS.home} ctx={ctx} className="kit-gbar-brand">
           {brandIcon ?? <PixelIcon name="grass" size={16} />}
