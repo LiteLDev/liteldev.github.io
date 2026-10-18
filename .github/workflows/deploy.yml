@@ -20,6 +20,9 @@ jobs:
       # Unit tests; with CI set they skip their own site/ freshness test (the step above covers it).
       - run: node --test "scripts/*.test.mjs"
 
+      # levimc-kit's own unit tests (cross-site preference cookies, locale mapping, inline scripts); no dependencies.
+      - run: node --test "kit/tests/*.test.mjs"
+
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site/
