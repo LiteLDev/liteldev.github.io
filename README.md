@@ -20,13 +20,20 @@ site repository (`<app>/kit/`): sites vendor it from here and never edit their c
 [`kit/README.md`](kit/README.md) for the design system, the docs engine and the verification scripts.
 
 - Vendor it into a site: `node kit/scripts/vendor.mjs <site-repo>/<app-dir>` (writes `<app-dir>/kit/`).
-- This copy is the kit in its vendored form: no `demo/`, no `package.json`, no dependencies. It cannot be
-  type-checked or rebuilt here, and `kit/static/` (which `site/` is generated from) is prebuilt. Kit changes
-  are therefore made and verified in the levimc-kit development workspace (the kit plus its `demo/` app with
-  the dependencies installed; see "Maintaining the kit" in `kit/README.md`): typecheck, regenerate
-  `kit/static/` with `static/build-static.mjs`, build the demo and run its linkcheck and smoke tests. Then
-  copy the result here (`node <workspace>/scripts/vendor.mjs . && rm kit/.vendored`), bump `kit/VERSION`,
-  regenerate `site/` (below), and re-vendor each site.
+- What changed in each version, and what a site must change when it re-vendors: the Changelog at the end of
+  [`kit/README.md`](kit/README.md#changelog).
+- This copy is the kit in its vendored form: no `demo/`, no `package.json`, no dependencies. Its unit tests run
+  here as they are (`node --test "kit/tests/*.test.mjs"`, also in CI). Everything that needs the kit's
+  dependencies runs from any site that vendors the kit and has them installed, e.g. LeviLamina's `docs/main`
+  after `npm ci`:
+  1. edit `kit/` here, then vendor it into that app: `node kit/scripts/vendor.mjs <app-dir>`;
+  2. in the app: `npm run typecheck` (TypeScript 7.x and 6.0.x), `node kit/static/build-static.mjs --out
+     <this repo>/kit/static` (regenerates the prebuilt `kit/static/` here: snippets, `kit.js`, `kit.css`,
+     `kit-chrome.css`, `kit-nojs-dark.css`, pages, Doxygen templates), `npm run build`, `npm run preview` and
+     `npm run smoke` (plain apps: `smoke.mjs --app`), and `node kit/tests/cross-site.e2e.mjs` for the shared
+     preferences (see "Verification scripts" in `kit/README.md`);
+  3. here: bump `kit/VERSION` and `kit/components/version.ts`, add a Changelog entry, regenerate `site/`
+     (below), commit, then re-vendor each site.
 
 ## Building `site/`
 
@@ -41,12 +48,13 @@ node scripts/build-site.test.mjs --live   # also checks every redirect target an
 node kit/scripts/serve-pages.mjs site --base / --port 4173   # preview with GitHub Pages semantics
 ```
 
-The generated pages load the kit's prebuilt assets (`kit.css`, `kit.js`, sprites) from `site/_kit/`; only the
-files the pages reference are copied. On top of the kit's static pages the generator adds the kit's skip link,
-an underline for the link in the "Redirecting to …" heading (and balanced heading wrapping), the kit's dark
-theme for readers without JavaScript (`_kit/kit-nojs-dark.css`, the `.dark` rules of `kit.css`, loaded in
-`<noscript>` for `prefers-color-scheme: dark`), and a footer year that follows the reader's clock. These are
-candidates for `kit/static/` itself.
+The generated pages load the kit's prebuilt assets (`kit.css`, `kit.js`, `kit-nojs-dark.css`, sprites) from
+`site/_kit/`; only the files the pages reference are copied. They are the kit's static pages as they are: the
+LeviMC bar with the same tabs and controls as every other LeviMC site (language and theme menus that share
+the visitor's choices with levimc.org and every *.levimc.org site through the `levimc_lang` / `levimc_theme`
+cookies; `kit.js` translates the bar and footer into the chosen language), the skip link, the no-JavaScript dark
+theme, the live footer year and `<meta name="generator" content="levimc-kit <version>">`. The generator only
+adds the 404 forwarding map, the redirect pages' own text, their language and the docs project they belong to.
 
 To forward another retired docs site, add it to `MOVED_SITES` in `scripts/legacy-redirects.mjs` (every old
 URL, its new canonical URL, the new page's title and what happens to old `#anchors`; files the old site served

@@ -4,6 +4,7 @@ import type { PageData, RouteMeta } from '../shared/types';
 import { href, langOf, loadPage, localeOf, matchPathname, site, stringsFor } from './data';
 import { pageTitle } from '../shared/head';
 import { SiteHeader } from './components/SiteHeader';
+import { KitLink } from './components/KitLink';
 import { MobileDrawer } from './components/MobileDrawer';
 import { SearchModal } from './components/SearchModal';
 import { DocLayout } from './layouts/DocLayout';
@@ -142,15 +143,10 @@ export function App() {
     lang: l.lang,
     href: href(route?.alternates[l.code] ?? site.homePaths[l.code] ?? l.prefix),
   }));
-  const onLocaleSelect = (code: string) => {
-    try {
-      localStorage.setItem(`levimc-locale-${site.siteKey}`, code);
-    } catch {
-      /* ignore */
-    }
-  };
+  // The language menu of the top bar is this site's locale switcher: choosing one stores it as the visitor's
+  // cross-site language preference (LocaleSwitcher) and opens the equivalent page.
+  const languages = site.locales.length > 1 ? { options: localeOptions, current: locale, linkComponent: KitLink } : undefined;
   const sidebar = route?.sidebar ? site.sidebars[route.sidebar] : undefined;
-  const hasDrawer = !!sidebar || (site.nav[locale]?.length ?? 0) > 0;
 
   return (
     <ThemeProvider>
@@ -159,25 +155,14 @@ export function App() {
       </a>
       <PaintedBackdrop scene={route?.layout !== 'home'} />
       <div className="kit-shell kit-above-backdrop" data-layout={route?.layout ?? '404'}>
-        <GlobalBar current="docs" currentDocs={site.project} locale={lang} />
-        <SiteHeader
-          route={route}
-          locale={locale}
-          lang={lang}
-          t={t}
-          localeOptions={localeOptions}
-          onLocaleSelect={onLocaleSelect}
-          onOpenSearch={openSearch}
-          onOpenDrawer={() => setDrawerOpen(true)}
-          drawerOpen={drawerOpen}
-          hasDrawer={hasDrawer}
-        />
+        <GlobalBar current="docs" currentDocs={site.project} locale={lang} strings={t} languages={languages} github={site.github} menu={false} />
+        <SiteHeader route={route} locale={locale} t={t} onOpenSearch={openSearch} onOpenDrawer={() => setDrawerOpen(true)} drawerOpen={drawerOpen} />
         <Suspense fallback={<main id="kit-main" className="kit-loading" aria-busy="true" />}>
           <RoutePage route={route} t={t} onSearch={openSearch} locale={locale} />
         </Suspense>
-        <SiteFooter locale={lang} extra={site.footer?.copyright ?? site.footer?.message} />
+        <SiteFooter locale={lang} strings={t} extra={site.footer?.message} copyright={site.footer?.copyright} />
       </div>
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} route={route} locale={locale} sidebar={sidebar} path={route?.path ?? ''} t={t} />
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} route={route} locale={locale} lang={lang} sidebar={sidebar} path={route?.path ?? ''} t={t} />
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} locale={locale} t={t} />
     </ThemeProvider>
   );
