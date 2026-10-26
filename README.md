@@ -4,7 +4,7 @@ The root of **docs.levimc.org** (GitHub Pages, generated into `site/` and deploy
 `.github/workflows/deploy.yml`).
 
 Project repositories with Pages publish their own docs at `docs.levimc.org/<Repo>/` (LeviLamina,
-LegacyScriptEngine, lip, LeviLauncher, LeviLaunchroid). This site answers every other path:
+LegacyScriptEngine, lip, LeviLauncher, LeviLauncher for Android). This site answers every other path:
 
 | Path | What it does |
 | --- | --- |
