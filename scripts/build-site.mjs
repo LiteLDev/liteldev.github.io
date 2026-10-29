@@ -243,6 +243,13 @@ const STUB_TEXT = {
     text: (s) => `${s.oldName} 文档已并入 ${s.newName} 文档。`,
     button: '继续',
   },
+  'zh-HK': {
+    title: (page) => `已遷移：${page} | LeviMC Docs`,
+    eyebrow: 'Page moved',
+    heading: (link) => `正在跳轉到 ${link}…`,
+    text: (s) => `${s.oldName} 文檔已併入 ${s.newName} 文檔。`,
+    button: '繼續',
+  },
 };
 
 /** The redirect script of a stub page: the target plus the old #anchor as `hash` says. */
