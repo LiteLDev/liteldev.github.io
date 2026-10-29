@@ -54,7 +54,7 @@ export const MOVED_SITES = [
       ['api/signature', 'LeviLamina/developer_guides/android/api/signature/', 'en', 'Signature API', true],
       ['api/patch', 'LeviLamina/developer_guides/android/api/patch/', 'en', 'Patch API', true],
       ['api/memory-hook-macros', 'LeviLamina/developer_guides/android/api/memory_hook_macros/', 'en', 'Memory Hook Example', true],
-      ['api/types-and-macros', 'LeviLamina/developer_guides/android/api/types_and_macros/', 'en', 'SDK Headers and Macros', true],
+      ['api/types-and-macros', 'LeviLamina/developer_guides/android/api/types_and_macros/', 'en', 'SDK Headers and Macros', { pl_export: ['pl-export'], pl_register_mod: ['pl-register-mod'] }],
       ['privacy-policy', 'LeviLauncher/privacy-policy', 'en', 'Privacy Policy', true],
       ['zh-CN/', 'LeviLauncher/zh-CN/guide/quick-start?platform=android', 'zh-CN', '5 分钟上手', false],
       ['zh-CN/guide/getting-started', 'LeviLauncher/zh-CN/guide/quick-start?platform=android', 'zh-CN', '5 分钟上手', false],
@@ -70,7 +70,7 @@ export const MOVED_SITES = [
       ['zh-CN/api/signature', 'LeviLamina/zh/developer_guides/android/api/signature/', 'zh-CN', 'Signature API', true],
       ['zh-CN/api/patch', 'LeviLamina/zh/developer_guides/android/api/patch/', 'zh-CN', 'Patch API', true],
       ['zh-CN/api/memory-hook-macros', 'LeviLamina/zh/developer_guides/android/api/memory_hook_macros/', 'zh-CN', 'Memory Hook 示例', true],
-      ['zh-CN/api/types-and-macros', 'LeviLamina/zh/developer_guides/android/api/types_and_macros/', 'zh-CN', 'SDK 头文件与宏', true],
+      ['zh-CN/api/types-and-macros', 'LeviLamina/zh/developer_guides/android/api/types_and_macros/', 'zh-CN', 'SDK 头文件与宏', { pl_export: ['pl-export'], pl_register_mod: ['pl-register-mod'] }],
       ['zh-Hant/', 'LeviLauncher/zh-HK/guide/quick-start?platform=android', 'zh-HK', '5 分鐘上手', false],
       ['zh-Hant/guide/getting-started', 'LeviLauncher/zh-HK/guide/quick-start?platform=android', 'zh-HK', '5 分鐘上手', false],
       ['zh-Hant/guide/features', 'LeviLauncher/zh-HK/guide/version-management?platform=android', 'zh-HK', '版本管理', false],
@@ -85,7 +85,7 @@ export const MOVED_SITES = [
       ['zh-Hant/api/signature', 'LeviLamina/zh-Hant/developer_guides/android/api/signature/', 'zh-HK', 'Signature API', true],
       ['zh-Hant/api/patch', 'LeviLamina/zh-Hant/developer_guides/android/api/patch/', 'zh-HK', 'Patch API', true],
       ['zh-Hant/api/memory-hook-macros', 'LeviLamina/zh-Hant/developer_guides/android/api/memory_hook_macros/', 'zh-HK', 'Memory Hook 示例', true],
-      ['zh-Hant/api/types-and-macros', 'LeviLamina/zh-Hant/developer_guides/android/api/types_and_macros/', 'zh-HK', 'SDK 頭文件與宏', true],
+      ['zh-Hant/api/types-and-macros', 'LeviLamina/zh-Hant/developer_guides/android/api/types_and_macros/', 'zh-HK', 'SDK 頭文件與宏', { pl_export: ['pl-export'], pl_register_mod: ['pl-register-mod'] }],
     ],
     aliases: [
       ['api/', 'LeviLamina/developer_guides/android/api/mod/'],
@@ -150,7 +150,8 @@ export const MOVED_SITES = [
       ['api/types-and-macros', 'developer_guides/android/api/types_and_macros/', 'en', 'SDK Headers and Macros', {
         'sdk-headers-and-macros': ['types-and-macros'],
         'public-headers': ['headers'],
-        'pl-export': ['plapi'],
+        pl_export: ['plapi', 'pl-export'],
+        pl_register_mod: ['pl-register-mod'],
       }],
       ['zh-CN/', 'zh/developer_guides/android/', 'zh-CN', '原生模组快速开始', true],
       ['zh-CN/guide/getting-started', 'zh/developer_guides/android/', 'zh-CN', '原生模组快速开始', false],
@@ -189,7 +190,8 @@ export const MOVED_SITES = [
       ['zh-CN/api/types-and-macros', 'zh/developer_guides/android/api/types_and_macros/', 'zh-CN', 'SDK 头文件与宏', {
         'sdk-头文件与宏': ['types-与宏'],
         公开头文件: ['头文件'],
-        'pl-export': ['宏', 'plapi'],
+        pl_export: ['宏', 'plapi', 'pl-export'],
+        pl_register_mod: ['pl-register-mod'],
       }],
     ],
     aliases: [
