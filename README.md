@@ -4,12 +4,13 @@ The root of **docs.levimc.org** (GitHub Pages, generated into `site/` and deploy
 `.github/workflows/deploy.yml`).
 
 Project repositories with Pages publish their own docs at `docs.levimc.org/<Repo>/` (LeviLamina,
-LegacyScriptEngine, lip, LeviLauncher, LeviLauncher for Android). This site answers every other path:
+LegacyScriptEngine, lip, LeviLauncher — Windows and Android in one site). This site answers every other path:
 
 | Path | What it does |
 | --- | --- |
 | `/` | Redirects instantly to <https://levimc.org/> (canonical + meta refresh + `location.replace`); the page itself is the kit's themed fallback, visible only without JavaScript or during the redirect. |
-| `/preloader-android/…` | One redirect page per URL of the former Preloader Android docs (and for its `api/`, `guide/` directories), which now live in the [LeviLaunchroid docs](https://docs.levimc.org/LeviLaunchroid/); its `appicon.png` is still published. |
+| `/LeviLaunchroid/…` | One redirect page per URL of the former LeviLauncher for Android docs (and for its `api/`, `guide/` directories), which are now the [Android section of the LeviLauncher docs](https://docs.levimc.org/LeviLauncher/android/) (`zh-Hant/` → `zh-HK/android/`); its `appicon.png` is still published. |
+| `/preloader-android/…` | One redirect page per URL of the former Preloader Android docs (and for its `api/`, `guide/` directories), which now live in the same [Android section](https://docs.levimc.org/LeviLauncher/android/); its `appicon.png` is still published. |
 | `/LiteXLoader/…` | The former LiteXLoader docs (docsify; `liteldev.github.io/LiteXLoader/` now redirects here) → the [LegacyScriptEngine docs](https://docs.levimc.org/LegacyScriptEngine/). |
 | anything else | `404.html`: the kit's themed 404. Before it renders, a forwarding map sends other forms of the legacy URLs (trailing slash, `index.html`, unknown pages) and wrongly cased project paths (`/levilamina/…` → `/LeviLamina/…`) to their canonical page. |
 

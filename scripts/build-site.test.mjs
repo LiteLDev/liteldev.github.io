@@ -28,7 +28,10 @@ const D = forwardTable();
 const fwd = (path, hash = '', search = '') => legacyForward(path, search, hash, D);
 const files = generate();
 const html = [...files].filter(([f]) => f.endsWith('.html'));
-const L = `${ORIGIN}/LeviLaunchroid/`;
+// the Android section of LeviLauncher's docs (formerly docs.levimc.org/LeviLaunchroid/)
+const L = `${ORIGIN}/LeviLauncher/android/`;
+const LZ = `${ORIGIN}/LeviLauncher/zh-CN/android/`;
+const LH = `${ORIGIN}/LeviLauncher/zh-HK/android/`;
 const LSE = `${ORIGIN}/LegacyScriptEngine/`;
 
 /** Run a page's redirect script (the first inline <script> that calls location.replace) at `href`. */
@@ -83,23 +86,23 @@ test('404 forwarding: preloader-android pages', () => {
   assert.equal(fwd('/preloader-android/api/hook.html', '#pl_hook'), `${L}api/hook#pl_hook`);
   assert.equal(fwd('/preloader-android/api/hook/'), `${L}api/hook`);
   assert.equal(fwd('/Preloader-Android/API/hook'), `${L}api/hook`);
-  assert.equal(fwd('/preloader-android/zh-CN'), `${L}zh-CN/`);
-  assert.equal(fwd('/preloader-android/zh-CN/'), `${L}zh-CN/`);
-  assert.equal(fwd('/preloader-android/zh-CN/api/types-and-macros.html'), `${L}zh-CN/api/types-and-macros`);
+  assert.equal(fwd('/preloader-android/zh-CN'), `${LZ}`);
+  assert.equal(fwd('/preloader-android/zh-CN/'), `${LZ}`);
+  assert.equal(fwd('/preloader-android/zh-CN/api/types-and-macros.html'), `${LZ}api/types-and-macros`);
   // rewritten API pages: old section ids with an equivalent are renamed, ids that still exist are kept
   assert.equal(fwd('/preloader-android/api/hook', '#pl-hook'), `${L}api/hook#functions`);
   assert.equal(fwd('/preloader-android/api/hook', '#common-mistakes'), `${L}api/hook#common-mistakes`);
   assert.equal(fwd('/preloader-android/api/mod.html', '#headers'), `${L}api/mod#header`);
-  assert.equal(fwd('/preloader-android/zh-CN/api/hook', '#%E9%93%BE%E5%BC%8F-hook-%E8%A1%8C%E4%B8%BA'), `${L}zh-CN/api/hook#类型`);
+  assert.equal(fwd('/preloader-android/zh-CN/api/hook', '#%E9%93%BE%E5%BC%8F-hook-%E8%A1%8C%E4%B8%BA'), `${LZ}api/hook#类型`);
   // guide pages moved to a different page: the old #anchor is dropped
   assert.equal(fwd('/preloader-android/guide/getting-started', '#manifest-json'), `${L}guide/developer`);
-  assert.equal(fwd('/preloader-android/zh-CN/guide/compatibility.html', '#abi'), `${L}zh-CN/guide/developer`);
+  assert.equal(fwd('/preloader-android/zh-CN/guide/compatibility.html', '#abi'), `${LZ}guide/developer`);
   // aliases and fallbacks
   assert.equal(fwd('/preloader-android/api/'), `${L}api/mod`);
   assert.equal(fwd('/preloader-android/api/', '#x'), `${L}api/mod`);
-  assert.equal(fwd('/preloader-android/zh-CN/guide'), `${L}zh-CN/guide/developer`);
+  assert.equal(fwd('/preloader-android/zh-CN/guide'), `${LZ}guide/developer`);
   assert.equal(fwd('/preloader-android/assets/app.123.js'), L);
-  assert.equal(fwd('/preloader-android/zh-CN/nope/deeper'), `${L}zh-CN/`);
+  assert.equal(fwd('/preloader-android/zh-CN/nope/deeper'), `${LZ}`);
   assert.equal(fwd('/preloader-android/zh-cnx'), L);
   // query strings of the old site carried nothing
   assert.equal(fwd('/preloader-android/api/mod', '', '?q=1'), `${L}api/mod`);
@@ -108,7 +111,30 @@ test('404 forwarding: preloader-android pages', () => {
   // Object.prototype names are not pages
   assert.equal(fwd('/preloader-android/constructor'), L);
   assert.equal(fwd('/preloader-android/__proto__'), L);
-  assert.equal(fwd('/preloader-android/zh-CN/hasOwnProperty'), `${L}zh-CN/`);
+  assert.equal(fwd('/preloader-android/zh-CN/hasOwnProperty'), `${LZ}`);
+});
+
+test('404 forwarding: LeviLaunchroid pages go to the Android section of LeviLauncher', () => {
+  assert.equal(fwd('/LeviLaunchroid'), L);
+  assert.equal(fwd('/LeviLaunchroid/'), L);
+  assert.equal(fwd('/LeviLaunchroid/index.html', '#features'), `${L}#features`);
+  assert.equal(fwd('/LeviLaunchroid/guide/features'), `${L}guide/features`);
+  assert.equal(fwd('/LeviLaunchroid/api/hook.html', '#signatures'), `${L}api/hook#signatures`);
+  assert.equal(fwd('/levilaunchroid/API/Hook'), `${L}api/hook`);
+  assert.equal(fwd('/LeviLaunchroid/privacy-policy'), `${L}privacy-policy`);
+  assert.equal(fwd('/LeviLaunchroid/guide/getting-started', '#install-levilauncher-for-android'), `${L}guide/getting-started#install-levilauncher-on-android`);
+  assert.equal(fwd('/LeviLaunchroid/zh-CN/'), LZ);
+  assert.equal(fwd('/LeviLaunchroid/zh-CN/api/types-and-macros'), `${LZ}api/types-and-macros`);
+  assert.equal(fwd('/LeviLaunchroid/zh-CN/guide/getting-started', '#%E5%AE%89%E8%A3%85-levilauncher-for-android'), `${LZ}guide/getting-started#安装-android-版-levilauncher`);
+  // zh-Hant became LeviLauncher's zh-HK
+  assert.equal(fwd('/LeviLaunchroid/zh-Hant/'), LH);
+  assert.equal(fwd('/LeviLaunchroid/zh-Hant/guide/build.html'), `${LH}guide/build`);
+  // aliases and fallbacks
+  assert.equal(fwd('/LeviLaunchroid/api/'), `${L}api/mod`);
+  assert.equal(fwd('/LeviLaunchroid/zh-Hant/guide'), `${LH}guide/getting-started`);
+  assert.equal(fwd('/LeviLaunchroid/assets/app.123.js'), L);
+  assert.equal(fwd('/LeviLaunchroid/zh-CN/nope'), LZ);
+  assert.equal(fwd('/LeviLaunchroid/zh-Hant/nope/deeper'), LH);
 });
 
 test('404 forwarding: LiteXLoader (docsify) goes to the LegacyScriptEngine docs, without its #/ route', () => {
@@ -162,10 +188,12 @@ test('every old page and directory alias has a redirect page with canonical, met
       if (from.endsWith('/') && from) assert.equal(fwd(old.slice(0, -1)), url, old.slice(0, -1));
     }
   }
-  assert.equal(stubs, 22 + 4 + 1);
+  assert.equal(stubs, 22 + 4 + 1 + 46 + 6);
   assert.equal([...files.keys()].filter((f) => f.endsWith('.html') && f.startsWith('preloader-android/')).length, 26);
   for (const dir of ['api', 'guide', 'zh-CN/api', 'zh-CN/guide']) assert.ok(files.has(`preloader-android/${dir}/index.html`), `${dir}/ answers 200`);
   assert.ok(files.has('LiteXLoader/index.html'));
+  assert.equal([...files.keys()].filter((f) => f.endsWith('.html') && f.startsWith('LeviLaunchroid/')).length, 52);
+  for (const dir of ['api', 'guide', 'zh-CN/api', 'zh-CN/guide', 'zh-Hant/api', 'zh-Hant/guide']) assert.ok(files.has(`LeviLaunchroid/${dir}/index.html`), `${dir}/ answers 200`);
 });
 
 test('the old site\'s files are published verbatim', () => {
@@ -173,6 +201,8 @@ test('the old site\'s files are published verbatim', () => {
   assert.ok(Buffer.isBuffer(icon));
   // docs/public/appicon.png of LiteLDev/preloader-android@a29b5a6702 (= LeviLaunchroid's appicon.png)
   assert.equal(createHash('sha256').update(icon).digest('hex'), 'cffec87041c9e91fb640029d5f3bf032dd081bced928dd5547bd13db09912438');
+  // docs/public/appicon.png of LiteLDev/LeviLaunchroid, the same image
+  assert.deepEqual(files.get('LeviLaunchroid/appicon.png'), icon);
 });
 
 test('index.html redirects instantly to levimc.org and keeps its fallback text', () => {
@@ -202,7 +232,7 @@ test('404.html runs the forwarding map before rendering', () => {
     });
     return { replaced, hidden: style.visibility === 'hidden' };
   };
-  assert.deepEqual(run('/preloader-android/zh-CN/api/hook.html', '#x'), { replaced: `${L}zh-CN/api/hook#x`, hidden: true });
+  assert.deepEqual(run('/preloader-android/zh-CN/api/hook.html', '#x'), { replaced: `${LZ}api/hook#x`, hidden: true });
   assert.deepEqual(run('/preloader-android/api/signature', '#c-batch-example'), { replaced: `${L}api/signature#example`, hidden: true });
   assert.deepEqual(run('/LiteXLoader/', '#/zh_CN/Usage'), { replaced: LSE, hidden: true });
   assert.deepEqual(run('/Levilauncher/'), { replaced: `${ORIGIN}/LeviLauncher/`, hidden: true });
@@ -212,7 +242,7 @@ test('404.html runs the forwarding map before rendering', () => {
 test('every page: the kit chrome — skip link, no-JS dark theme, generator, footer year, Mods and Blog links', () => {
   for (const [f, page] of html) {
     const lang = /<html lang="([^"]+)">/.exec(page)[1];
-    const skip = lang === 'zh-CN' ? '跳到正文' : 'Skip to content';
+    const skip = lang.startsWith('zh-') ? '跳到正文' : 'Skip to content'; // zh-CN and zh-HK (old zh-Hant pages)
     assert.ok(page.includes(`<body>\n  <a class="kit-skip-link" href="#kit-main" data-kit-t="skipToContent">${skip}</a>\n`), `${f}: skip link first in <body>`);
     assert.ok(page.includes('<main id="kit-main"'), `${f}: skip link target`);
     assert.ok(page.includes(`<noscript><link rel="stylesheet" href="${ASSET_BASE}${NOJS_DARK_CSS}" media="(prefers-color-scheme: dark)"></noscript>`), f);
@@ -220,7 +250,7 @@ test('every page: the kit chrome — skip link, no-JS dark theme, generator, foo
     assert.match(page, /<meta name="generator" content="levimc-kit \d+\.\d+\.\d+[^"]*">/, `${f}: generator`);
     assert.match(page, /<span>© <span data-kit-year="">\d{4}<\/span> LeviMC<\/span>/, f);
     // the GlobalBar: canonical tabs, Mods label, the blog on levimc.org, language + theme menus, GitHub
-    const mods = lang === 'zh-CN' ? '模组' : 'Mods';
+    const mods = { 'zh-CN': '模组', 'zh-HK': '模組' }[lang] ?? 'Mods';
     assert.ok(page.includes(`<a class="kit-gbar-link" href="https://levimc.org/mods/"><span data-kit-t="mods">${mods}</span></a>`), `${f}: Mods tab`);
     assert.ok(page.includes('<a class="kit-gbar-link" href="https://levimc.org/blog/">'), `${f}: Blog tab`);
     assert.ok(!page.includes('blog.levimc.org'), `${f}: blog.levimc.org`);
@@ -256,8 +286,8 @@ test('kit assets: every /_kit/ reference is published, nothing else', () => {
 test('static GlobalBar reproduces the kit rendering for the Projects tab', () => {
   const kit404 = readFileSync(join(repo, 'kit/static/pages/404.html'), 'utf8');
   assert.ok(kit404.includes(globalBar('en')), 'en GlobalBar with aria-current on Projects matches kit/static/pages/404.html');
-  const zh = globalBar('zh-CN', 'LeviLaunchroid');
-  // Projects in the bar and in the phone menu + LeviLaunchroid in both Projects lists
+  const zh = globalBar('zh-CN', 'LeviLauncher');
+  // Projects in the bar and in the phone menu + LeviLauncher in both Projects lists
   assert.equal(zh.match(/aria-current="page"/g).length, 4);
 });
 
