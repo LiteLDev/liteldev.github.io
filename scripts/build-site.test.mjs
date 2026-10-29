@@ -28,10 +28,15 @@ const D = forwardTable();
 const fwd = (path, hash = '', search = '') => legacyForward(path, search, hash, D);
 const files = generate();
 const html = [...files].filter(([f]) => f.endsWith('.html'));
-// the Android section of LeviLauncher's docs (formerly docs.levimc.org/LeviLaunchroid/)
-const L = `${ORIGIN}/LeviLauncher/android/`;
-const LZ = `${ORIGIN}/LeviLauncher/zh-CN/android/`;
-const LH = `${ORIGIN}/LeviLauncher/zh-HK/android/`;
+// the Android native mod docs in LeviLamina's docs, and LeviLauncher's guide with the Android tab preselected
+// (formerly docs.levimc.org/LeviLaunchroid/)
+const L = `${ORIGIN}/LeviLamina/developer_guides/android/`;
+const LZ = `${ORIGIN}/LeviLamina/zh/developer_guides/android/`;
+const LH = `${ORIGIN}/LeviLamina/zh-Hant/developer_guides/android/`;
+const G = `${ORIGIN}/LeviLauncher/guide/`;
+const GZ = `${ORIGIN}/LeviLauncher/zh-CN/guide/`;
+const GH = `${ORIGIN}/LeviLauncher/zh-HK/guide/`;
+const QS = '?platform=android';
 const LSE = `${ORIGIN}/LegacyScriptEngine/`;
 
 /** Run a page's redirect script (the first inline <script> that calls location.replace) at `href`. */
@@ -82,59 +87,59 @@ test('404 forwarding: preloader-android pages', () => {
   assert.equal(fwd('/preloader-android'), L);
   assert.equal(fwd('/preloader-android/'), L);
   assert.equal(fwd('/preloader-android/index.html', '#x'), `${L}#x`);
-  assert.equal(fwd('/preloader-android/api/hook'), `${L}api/hook`);
-  assert.equal(fwd('/preloader-android/api/hook.html', '#pl_hook'), `${L}api/hook#pl_hook`);
-  assert.equal(fwd('/preloader-android/api/hook/'), `${L}api/hook`);
-  assert.equal(fwd('/Preloader-Android/API/hook'), `${L}api/hook`);
-  assert.equal(fwd('/preloader-android/zh-CN'), `${LZ}`);
-  assert.equal(fwd('/preloader-android/zh-CN/'), `${LZ}`);
-  assert.equal(fwd('/preloader-android/zh-CN/api/types-and-macros.html'), `${LZ}api/types-and-macros`);
+  assert.equal(fwd('/preloader-android/api/hook'), `${L}api/hook/`);
+  assert.equal(fwd('/preloader-android/api/hook.html', '#pl_hook'), `${L}api/hook/#pl_hook`);
+  assert.equal(fwd('/preloader-android/api/hook/'), `${L}api/hook/`);
+  assert.equal(fwd('/Preloader-Android/API/hook'), `${L}api/hook/`);
+  assert.equal(fwd('/preloader-android/zh-CN'), LZ);
+  assert.equal(fwd('/preloader-android/zh-CN/'), LZ);
+  assert.equal(fwd('/preloader-android/zh-CN/api/types-and-macros.html'), `${LZ}api/types_and_macros/`);
   // rewritten API pages: old section ids with an equivalent are renamed, ids that still exist are kept
-  assert.equal(fwd('/preloader-android/api/hook', '#pl-hook'), `${L}api/hook#functions`);
-  assert.equal(fwd('/preloader-android/api/hook', '#common-mistakes'), `${L}api/hook#common-mistakes`);
-  assert.equal(fwd('/preloader-android/api/mod.html', '#headers'), `${L}api/mod#header`);
-  assert.equal(fwd('/preloader-android/zh-CN/api/hook', '#%E9%93%BE%E5%BC%8F-hook-%E8%A1%8C%E4%B8%BA'), `${LZ}api/hook#类型`);
+  assert.equal(fwd('/preloader-android/api/hook', '#pl-hook'), `${L}api/hook/#functions`);
+  assert.equal(fwd('/preloader-android/api/hook', '#common-mistakes'), `${L}api/hook/#common-mistakes`);
+  assert.equal(fwd('/preloader-android/api/mod.html', '#headers'), `${L}api/mod/#header`);
+  assert.equal(fwd('/preloader-android/zh-CN/api/hook', '#%E9%93%BE%E5%BC%8F-hook-%E8%A1%8C%E4%B8%BA'), `${LZ}api/hook/#类型`);
   // guide pages moved to a different page: the old #anchor is dropped
-  assert.equal(fwd('/preloader-android/guide/getting-started', '#manifest-json'), `${L}guide/developer`);
-  assert.equal(fwd('/preloader-android/zh-CN/guide/compatibility.html', '#abi'), `${LZ}guide/developer`);
+  assert.equal(fwd('/preloader-android/guide/getting-started', '#manifest-json'), L);
+  assert.equal(fwd('/preloader-android/zh-CN/guide/compatibility.html', '#abi'), LZ);
   // aliases and fallbacks
-  assert.equal(fwd('/preloader-android/api/'), `${L}api/mod`);
-  assert.equal(fwd('/preloader-android/api/', '#x'), `${L}api/mod`);
-  assert.equal(fwd('/preloader-android/zh-CN/guide'), `${LZ}guide/developer`);
+  assert.equal(fwd('/preloader-android/api/'), `${L}api/mod/`);
+  assert.equal(fwd('/preloader-android/api/', '#x'), `${L}api/mod/`);
+  assert.equal(fwd('/preloader-android/zh-CN/guide'), LZ);
   assert.equal(fwd('/preloader-android/assets/app.123.js'), L);
-  assert.equal(fwd('/preloader-android/zh-CN/nope/deeper'), `${LZ}`);
+  assert.equal(fwd('/preloader-android/zh-CN/nope/deeper'), LZ);
   assert.equal(fwd('/preloader-android/zh-cnx'), L);
   // query strings of the old site carried nothing
-  assert.equal(fwd('/preloader-android/api/mod', '', '?q=1'), `${L}api/mod`);
+  assert.equal(fwd('/preloader-android/api/mod', '', '?q=1'), `${L}api/mod/`);
   // percent-encoded paths
-  assert.equal(fwd('/preloader%2Dandroid/api/hook'), `${L}api/hook`);
+  assert.equal(fwd('/preloader%2Dandroid/api/hook'), `${L}api/hook/`);
   // Object.prototype names are not pages
   assert.equal(fwd('/preloader-android/constructor'), L);
   assert.equal(fwd('/preloader-android/__proto__'), L);
-  assert.equal(fwd('/preloader-android/zh-CN/hasOwnProperty'), `${LZ}`);
+  assert.equal(fwd('/preloader-android/zh-CN/hasOwnProperty'), LZ);
 });
 
-test('404 forwarding: LeviLaunchroid pages go to the Android section of LeviLauncher', () => {
-  assert.equal(fwd('/LeviLaunchroid'), L);
-  assert.equal(fwd('/LeviLaunchroid/'), L);
-  assert.equal(fwd('/LeviLaunchroid/index.html', '#features'), `${L}#features`);
-  assert.equal(fwd('/LeviLaunchroid/guide/features'), `${L}guide/features`);
-  assert.equal(fwd('/LeviLaunchroid/api/hook.html', '#signatures'), `${L}api/hook#signatures`);
-  assert.equal(fwd('/levilaunchroid/API/Hook'), `${L}api/hook`);
-  assert.equal(fwd('/LeviLaunchroid/privacy-policy'), `${L}privacy-policy`);
-  assert.equal(fwd('/LeviLaunchroid/guide/getting-started', '#install-levilauncher-for-android'), `${L}guide/getting-started#install-levilauncher-on-android`);
-  assert.equal(fwd('/LeviLaunchroid/zh-CN/'), LZ);
-  assert.equal(fwd('/LeviLaunchroid/zh-CN/api/types-and-macros'), `${LZ}api/types-and-macros`);
-  assert.equal(fwd('/LeviLaunchroid/zh-CN/guide/getting-started', '#%E5%AE%89%E8%A3%85-levilauncher-for-android'), `${LZ}guide/getting-started#安装-android-版-levilauncher`);
-  // zh-Hant became LeviLauncher's zh-HK
-  assert.equal(fwd('/LeviLaunchroid/zh-Hant/'), LH);
-  assert.equal(fwd('/LeviLaunchroid/zh-Hant/guide/build.html'), `${LH}guide/build`);
+test('404 forwarding: LeviLaunchroid user pages go to LeviLauncher\'s guide, developer pages to LeviLamina\'s', () => {
+  assert.equal(fwd('/LeviLaunchroid'), `${G}quick-start${QS}`);
+  assert.equal(fwd('/LeviLaunchroid/'), `${G}quick-start${QS}`);
+  assert.equal(fwd('/LeviLaunchroid/index.html', '#features'), `${G}quick-start${QS}`);
+  assert.equal(fwd('/LeviLaunchroid/guide/features'), `${G}version-management${QS}`);
+  assert.equal(fwd('/LeviLaunchroid/guide/compatibility', '#native-mods'), `${G}faq-community-feedback`);
+  assert.equal(fwd('/LeviLaunchroid/privacy-policy'), `${ORIGIN}/LeviLauncher/privacy-policy`);
+  assert.equal(fwd('/LeviLaunchroid/guide/developer', '#mod-menu'), `${L}#mod-menu`);
+  assert.equal(fwd('/LeviLaunchroid/api/hook.html', '#signatures'), `${L}api/hook/#signatures`);
+  assert.equal(fwd('/levilaunchroid/API/Mod-Menu'), `${L}api/mod_menu/`);
+  assert.equal(fwd('/LeviLaunchroid/zh-CN/'), `${GZ}quick-start${QS}`);
+  assert.equal(fwd('/LeviLaunchroid/zh-CN/api/types-and-macros'), `${LZ}api/types_and_macros/`);
+  // zh-Hant became LeviLauncher's zh-HK and LeviLamina's zh-Hant
+  assert.equal(fwd('/LeviLaunchroid/zh-Hant/'), `${GH}quick-start${QS}`);
+  assert.equal(fwd('/LeviLaunchroid/zh-Hant/guide/build.html'), LH);
+  assert.equal(fwd('/LeviLaunchroid/zh-Hant/api/patch'), `${LH}api/patch/`);
   // aliases and fallbacks
-  assert.equal(fwd('/LeviLaunchroid/api/'), `${L}api/mod`);
-  assert.equal(fwd('/LeviLaunchroid/zh-Hant/guide'), `${LH}guide/getting-started`);
-  assert.equal(fwd('/LeviLaunchroid/assets/app.123.js'), L);
-  assert.equal(fwd('/LeviLaunchroid/zh-CN/nope'), LZ);
-  assert.equal(fwd('/LeviLaunchroid/zh-Hant/nope/deeper'), LH);
+  assert.equal(fwd('/LeviLaunchroid/api/'), `${L}api/mod/`);
+  assert.equal(fwd('/LeviLaunchroid/zh-Hant/guide'), `${GH}quick-start${QS}`);
+  assert.equal(fwd('/LeviLaunchroid/assets/app.123.js'), `${G}quick-start${QS}`);
+  assert.equal(fwd('/LeviLaunchroid/zh-CN/nope'), `${GZ}quick-start${QS}`);
 });
 
 test('404 forwarding: LiteXLoader (docsify) goes to the LegacyScriptEngine docs, without its #/ route', () => {
@@ -232,8 +237,8 @@ test('404.html runs the forwarding map before rendering', () => {
     });
     return { replaced, hidden: style.visibility === 'hidden' };
   };
-  assert.deepEqual(run('/preloader-android/zh-CN/api/hook.html', '#x'), { replaced: `${LZ}api/hook#x`, hidden: true });
-  assert.deepEqual(run('/preloader-android/api/signature', '#c-batch-example'), { replaced: `${L}api/signature#example`, hidden: true });
+  assert.deepEqual(run('/preloader-android/zh-CN/api/hook.html', '#x'), { replaced: `${LZ}api/hook/#x`, hidden: true });
+  assert.deepEqual(run('/preloader-android/api/signature', '#c-batch-example'), { replaced: `${L}api/signature/#example`, hidden: true });
   assert.deepEqual(run('/LiteXLoader/', '#/zh_CN/Usage'), { replaced: LSE, hidden: true });
   assert.deepEqual(run('/Levilauncher/'), { replaced: `${ORIGIN}/LeviLauncher/`, hidden: true });
   assert.deepEqual(run('/does-not-exist'), { replaced: null, hidden: false });
