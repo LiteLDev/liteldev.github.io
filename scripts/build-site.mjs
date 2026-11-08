@@ -230,21 +230,21 @@ function notFoundPage(notFound) {
 // Same structure as the kit's root redirect page: the heading links the target.
 const STUB_TEXT = {
   en: {
-    title: (page) => `Moved: ${page} | LeviMC Docs`,
+    title: (page) => `Moved: ${page} - LeviMC Docs`,
     eyebrow: 'Page moved',
     heading: (link) => `Redirecting to ${link}…`,
     text: (s) => `The ${s.oldName} docs are now part of the ${s.newName} documentation.`,
     button: 'Continue',
   },
   'zh-CN': {
-    title: (page) => `已迁移：${page} | LeviMC Docs`,
+    title: (page) => `已迁移：${page} - LeviMC Docs`,
     eyebrow: 'Page moved',
     heading: (link) => `正在跳转到 ${link}…`,
     text: (s) => `${s.oldName} 文档已并入 ${s.newName} 文档。`,
     button: '继续',
   },
   'zh-HK': {
-    title: (page) => `已遷移：${page} | LeviMC Docs`,
+    title: (page) => `已遷移：${page} - LeviMC Docs`,
     eyebrow: 'Page moved',
     heading: (link) => `正在跳轉到 ${link}…`,
     text: (s) => `${s.oldName} 文檔已併入 ${s.newName} 文檔。`,
@@ -284,7 +284,7 @@ function stubPage(site, [, to, lang, pageTitle, hash], notFound) {
   html = replaceOnce(html, /\n\s*<meta name="robots" content="noindex">/, '', 'robots meta');
   html = replaceOnce(html, globalBar('en'), globalBar(lang, site.to.replace(/\//g, '')), 'GlobalBar');
   html = replaceOnce(html, footer('en'), footer(lang), 'footer');
-  html = replaceOnce(html, /<main id="kit-main" class="kit-static-main">[\s\S]*?<\/main>/, main, '<main>');
+  html = replaceOnce(html, /<main id="kit-main"[^>]*>[\s\S]*?<\/main>/, main, '<main>');
   return hoistIntoHead(skipLink(html, lang), [
     `<link rel="canonical" href="${esc(url)}">`,
     `<meta http-equiv="refresh" content="0; url=${esc(url)}">`,

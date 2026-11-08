@@ -283,7 +283,7 @@ test('kit assets: every /_kit/ reference is published, nothing else', () => {
   for (const [, body] of html) for (const m of body.matchAll(/\/_kit\/([^"')\s?#]+)/g)) refs.add(`_kit/${m[1]}`);
   const published = [...files.keys()].filter((f) => f.startsWith('_kit/'));
   assert.deepEqual(published.sort(), [...refs].sort());
-  for (const f of ['_kit/kit.css', '_kit/kit.js', '_kit/grass.svg', '_kit/icons/compass.svg', '_kit/icons/pickaxe.svg', `_kit/${NOJS_DARK_CSS}`]) assert.ok(files.has(f), f);
+  for (const f of ['_kit/kit.css', '_kit/kit.js', '_kit/levimc.svg', '_kit/icons/pickaxe.svg', `_kit/${NOJS_DARK_CSS}`]) assert.ok(files.has(f), f);
   assert.equal(ASSET_BASE, '/_kit/');
   for (const [f, body] of html) assert.ok(!body.includes('/levimc-kit/'), f);
 });
