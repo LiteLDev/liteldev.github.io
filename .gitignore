@@ -1,0 +1,23 @@
+node_modules/
+
+# build output: the site (dist/), the parts built on their own (.build/mods/, .build/docs/<Site>/), intermediate
+# files of the main build (.kit/) and what builds keep between runs (.cache/: the mods registry, Doxygen's inputs)
+dist/
+.build/
+.kit/
+.cache/
+
+# generated before a docs build (content/<Site>/scripts/prebuild.mjs)
+/content/lip/pages/zh-Hant/
+/content/BeDD/public/bedd.asyncapi.yaml
+
+# Logs
+*.log
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.local
+*.sw?

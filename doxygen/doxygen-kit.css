@@ -1,0 +1,2197 @@
+/*
+ * levimc-kit overlay for doxygen-awesome-css v2.4.1 ("Impression, Craft" on Doxygen API pages): the API reference
+ * looks and behaves like the docs pages around it.
+ *
+ * doxygen/Doxyfile (doxygen/build.sh makes the files under .cache/doxygen/):
+ *   HTML_HEADER            = .cache/doxygen/header.html    (doxygen/gen-header.mjs, from the docs' _kit/nav.json)
+ *   HTML_FOOTER            = .cache/doxygen/footer.html
+ *   HTML_EXTRA_STYLESHEET  = .cache/doxygen/doxygen-awesome-css/doxygen-awesome.css \
+ *                            src/kit/static/kit-chrome.css \
+ *                            doxygen/doxygen-kit.css
+ *   HTML_EXTRA_FILES       = src/kit/static/kit.js .cache/doxygen/kit-dox-chrome.js
+ *   HTML_COLORSTYLE        = LIGHT      (the kit scripts toggle html.dark-mode / html.light-mode)
+ * After doxygen: node doxygen/patch-navtree.mjs <output dir> (the tree renders a window of a long list).
+ * Do NOT include doxygen-awesome-darkmode-toggle.js: kit.js owns the theme (cookie levimc_theme, shared by every LeviMC site).
+ *
+ * kit-chrome.css carries the docs layout (docs/app/docs.css): the header row, the drawer, the sidebar title and the
+ * table of contents use the docs' markup and rules as they are. This file maps doxygen-awesome's variables to the
+ * kit tokens, undoes what doxygen.css / doxygen-awesome set on the same elements (often with ids or !important),
+ * lays the Doxygen page out like the docs page and styles Doxygen's own content in the docs' visual language.
+ * One breakpoint, as on the docs pages: the drawer layout up to 960px.
+ */
+
+/* ================================================================== tokens: doxygen-awesome → kit
+   html.dark-mode / html.light-mode are always set (theme-init-doxygen.js), so `html.dark-mode` here beats
+   doxygen-awesome's `@media (prefers-color-scheme: dark) html:not(.light-mode)` palette; the kit tokens switch with
+   html.dark themselves. */
+html,
+html.dark-mode,
+html.light-mode {
+  --primary-color: var(--color-primary-strong);
+  --primary-dark-color: var(--color-primary-strong);
+  --primary-light-color: var(--color-primary);
+  --on-primary-color: var(--color-on-primary);
+  --link-color: var(--color-link);
+
+  --page-background-color: var(--color-canvas);
+  --page-foreground-color: var(--color-ink);
+  --page-secondary-foreground-color: var(--color-muted);
+  --separator-color: var(--color-line);
+
+  --border-radius-large: 0px;
+  --border-radius-small: 0px;
+  --border-radius-medium: 0px;
+  --box-shadow: none;
+  --odd-color: color-mix(in srgb, var(--color-ink) 1.8%, transparent);
+
+  /* the docs' type: Inter 16px / 28px, JetBrains Mono, both with their metric-matched fallbacks (no reflow) */
+  --font-family: var(--font-sans);
+  --font-family-monospace: var(--font-mono);
+  --page-font-size: 16px;
+  --content-line-height: 28px;
+  --navigation-font-size: 0.875rem;
+  --toc-font-size: 0.8125rem;
+  --code-font-size: 0.8125rem;
+  --memname-font-size: 0.8125rem;
+  --memtitle-font-size: 0.875rem;
+  --title-font-size: 0.9375rem;
+
+  --blockquote-background: color-mix(in srgb, var(--color-ink) 3%, var(--color-surface));
+  --blockquote-foreground: var(--color-muted);
+  --tablehead-background: color-mix(in srgb, var(--color-ink) 4%, var(--color-surface));
+  --tablehead-foreground: var(--color-ink);
+
+  --menu-focus-foreground: var(--color-on-primary);
+  --menu-focus-background: var(--color-primary-strong);
+  --menu-selected-background: var(--color-primary-soft);
+
+  --header-background: transparent;
+  --header-foreground: var(--color-ink);
+  --searchbar-background: transparent;
+  --searchbar-foreground: var(--color-ink);
+  --searchbar-border-radius: 0px;
+  --searchbar-height: 2rem;
+  --searchbar-width: 100%;
+
+  --code-background: var(--color-code-bg);
+  --code-foreground: var(--color-code-ink);
+  --fragment-background: var(--color-code-bg);
+  --fragment-foreground: var(--color-code-ink);
+  --fragment-keyword: #7a3f9c;
+  --fragment-keywordtype: #0e6a73;
+  --fragment-keywordflow: #a12f4f;
+  --fragment-token: #2f6f3d;
+  --fragment-comment: #69737b;
+  --fragment-link: #2a5d84;
+  --fragment-preprocessor: #a12f4f;
+  --fragment-linenumber-color: var(--color-code-gutter);
+  --fragment-linenumber-background: var(--color-code-bg);
+  --fragment-linenumber-border: var(--color-line);
+  --fragment-copy-ok-color: var(--color-primary-strong);
+
+  --side-nav-background: transparent;
+  --side-nav-foreground: var(--color-ink);
+  --toc-background: transparent;
+  --toc-foreground: var(--color-ink);
+  --webkit-scrollbar-color: var(--color-line-strong);
+
+  /* the frame of the docs' code blocks (theme/code.css .kit-code), shared by fragments and member boxes */
+  --kit-code-frame: color-mix(in srgb, var(--color-ink) 16%, var(--color-line));
+  --kit-code-drop: color-mix(in srgb, var(--color-ink) 5%, transparent);
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+html.dark-mode {
+  color-scheme: dark;
+  --fragment-keyword: #c6a8ff;
+  --fragment-keywordtype: #e9c46a;
+  --fragment-keywordflow: #f394b4;
+  --fragment-token: #9bd69e;
+  --fragment-comment: #8496a8;
+  --fragment-link: #8fd3e0;
+  --fragment-preprocessor: #f394b4;
+  --kit-code-frame: #04090e;
+  --kit-code-drop: rgb(0 0 0 / 0.3);
+}
+
+/* ================================================================== the page: the painted backdrop shows through
+   (the kit paints it on the page root: theme/painterly.css); Doxygen's body and panes paint nothing over it */
+html {
+  background-color: var(--color-canvas);
+}
+body {
+  background: none;
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+#side-nav,
+#container,
+#doc-content,
+#nav-tree,
+#page-nav,
+#nav-tree-contents {
+  background: none !important;
+}
+
+/* skip link (first in <body>): kit-chrome.css has no base layer, so its style is here; above Doxygen's layers */
+a.kit-skip-link:is(:link, :visited) {
+  position: fixed;
+  left: 1rem;
+  top: 0.75rem;
+  z-index: 10003;
+  transform: translateY(-200%);
+  padding: 0.5rem 0.875rem;
+  background: var(--color-surface);
+  color: var(--color-ink) !important;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none !important;
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--color-focus),
+    0 var(--px) 0 0 var(--color-focus),
+    calc(var(--px) * -1) 0 0 0 var(--color-focus),
+    var(--px) 0 0 0 var(--color-focus);
+}
+a.kit-skip-link:focus,
+a.kit-skip-link:focus-visible {
+  transform: none;
+  outline: none;
+}
+#doc-content:focus {
+  outline: none;
+}
+/* the LeviMC bar: above the backdrop and the painted scene band, sticky like on the docs (kit 2.22) */
+body > .kit-gbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+}
+
+/* focus ring (the kit's) */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* ================================================================== #top (kit 2.22: no header row)
+   Doxygen closes #top and puts its own menus in it (hidden below); it takes no room. */
+#top.kit-dox-top {
+  display: block;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+/* Doxygen's own menubar (Main Page, Classes, Files …) and its phone menu button + search holder (menu.js): the tree
+   lists the same pages, the bar's menu button opens the drawer, and kit.js moves the search box into the bar */
+#top > .sm-dox,
+#top > #main-nav,
+#main-menu-state {
+  display: none !important;
+}
+/* the docs pages run on Tailwind's preflight: border-box everywhere in the parts that share their markup */
+#top,
+#top *,
+#top *::before,
+#top *::after,
+.kit-drawer-root,
+.kit-drawer-root *,
+.kit-drawer-root *::before,
+.kit-drawer-root *::after,
+#page-nav *,
+.kit-dox-toc-mobile,
+.kit-dox-toc-mobile * {
+  box-sizing: border-box;
+}
+.kit-drawer ul,
+.kit-drawer li {
+  font-size: inherit;
+}
+
+/* ---- search: Doxygen's search box in the frame of the bar's search trigger (.kit-gbar-search, chrome.css): the
+   same size, frame, label, sprite and Ctrl K keys; icon-only where the bar's trigger is (≤ 1180px), opening over the
+   end of the bar while it is used. The placeholder (the trigger's sprite + label) keeps the place until menu.js has
+   made the box. */
+.kit-dox-search {
+  position: relative;
+  cursor: text;
+}
+.kit-dox-search-ph {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.kit-dox-search:has(#MSearchBox) .kit-dox-search-ph {
+  display: none;
+}
+.kit-dox-search #MSearchBox {
+  position: static;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 0;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.kit-dox-search #MSearchBox .left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  position: static;
+  height: 2rem;
+}
+.kit-dox-search #MSearchBox .right {
+  position: static;
+  display: none;
+  padding: 0;
+}
+.kit-dox-search #MSearchBox.MSearchBoxActive .right {
+  display: flex;
+  align-items: center;
+}
+.kit-dox-search:has(.MSearchBoxActive) .kit-gbar-search-keys {
+  display: none;
+}
+/* the search sprite (Doxygen's magnifier-with-dropdown keeps its hover menu of result kinds) */
+.kit-dox-search span#MSearchSelect {
+  position: static;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  background: currentColor;
+  -webkit-mask: var(--kit-icon-search) center / 16px 16px no-repeat;
+  mask: var(--kit-icon-search) center / 16px 16px no-repeat;
+}
+.kit-dox-search #MSearchSelect::before,
+.kit-dox-search #MSearchSelect::after,
+.kit-dox-search #MSearchSelect > * {
+  display: none;
+}
+.kit-dox-search #MSearchField {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 0;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font: 400 0.8125rem / 2rem var(--font-sans);
+  color: var(--color-ink);
+}
+.kit-dox-search #MSearchField::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+.kit-dox-search #MSearchClose {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  padding: 0;
+  color: var(--color-muted) !important;
+}
+.kit-dox-search #MSearchCloseImg {
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  -webkit-mask: var(--kit-icon-close) center / 12px 12px no-repeat;
+  mask: var(--kit-icon-close) center / 12px 12px no-repeat;
+}
+.kit-dox-search #MSearchCloseImg::before,
+.kit-dox-search #MSearchCloseImg::after {
+  display: none;
+}
+.kit-dox-search:focus-within {
+  --px-border: var(--color-primary);
+}
+/* icon-only (docs.css makes the trigger 2rem wide and hides the label/keys): the field folds away and opens over the
+   row while it is used */
+@media (max-width: 1180px) {
+  .kit-dox-search:not(:focus-within):not(:has(.MSearchBoxActive)) #MSearchField,
+  .kit-dox-search:not(:focus-within):not(:has(.MSearchBoxActive)) #MSearchBox .right {
+    display: none;
+  }
+  .kit-dox-search:not(:focus-within):not(:has(.MSearchBoxActive)) #MSearchBox .left {
+    justify-content: center;
+  }
+}
+/* in use while compact: the full box over the end of the row (the row keeps its layout: the slot keeps 2rem) */
+.kit-dox-search:is(:focus-within, :has(.MSearchBoxActive)) {
+  z-index: 2;
+}
+@media (max-width: 1180px) {
+  .kit-gbar-end:has(.kit-dox-search:is(:focus-within, :has(.MSearchBoxActive))) {
+    position: relative;
+  }
+  .kit-dox-search:is(:focus-within, :has(.MSearchBoxActive)) {
+    width: 2rem;
+    overflow: visible;
+  }
+  .kit-dox-search:is(:focus-within, :has(.MSearchBoxActive)) #MSearchBox {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(16rem, calc(100vw - 2rem));
+    padding: 0 0.3125rem 0 0.625rem;
+    background: var(--color-surface) !important;
+    box-shadow:
+      0 -2px 0 0 var(--color-primary),
+      0 2px 0 0 var(--color-primary),
+      -2px 0 0 0 var(--color-primary),
+      2px 0 0 0 var(--color-primary),
+      -1.5rem 0 1rem var(--color-canvas) !important;
+  }
+}
+/* the results: a framed panel under the row, like the docs' search dialog (fixed: the row is sticky) */
+#MSearchResultsWindow,
+#MSearchSelectWindow {
+  position: fixed !important;
+  /* under the search box (kit.js keeps --kit-dox-search-top: the box moves while the bar scrolls away) */
+  top: var(--kit-dox-search-top, calc(var(--spacing-globalbar) + 0.5rem)) !important;
+  left: auto !important;
+  right: max(1rem, calc((100vw - 90rem) / 2 + 1.5rem)) !important;
+  z-index: 60 !important;
+  margin: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  animation: none !important;
+  background: var(--color-surface) !important;
+  box-shadow:
+    0 -2px 0 0 var(--color-line-strong),
+    0 2px 0 0 var(--color-line-strong),
+    -2px 0 0 0 var(--color-line-strong),
+    2px 0 0 0 var(--color-line-strong),
+    var(--shadow-float) !important;
+}
+/* search.css blurs what is behind these panels (they are opaque here) */
+html #MSearchResultsWindow,
+html #MSearchSelectWindow,
+html #powerTip {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+#MSearchResultsWindow {
+  width: min(28rem, calc(100vw - 2rem)) !important;
+  max-height: min(32rem, calc(100dvh - var(--kit-dox-search-top, var(--spacing-globalbar)) - 1rem));
+  height: auto !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.375rem;
+}
+#MSearchResults,
+#MSearchResults .SRPage {
+  margin: 0;
+  background: none;
+  font-family: var(--font-sans);
+}
+#MSearchResults .SRPage .SREntry,
+#MSearchResults .SRResult {
+  font-size: 0.875rem;
+  padding: 0;
+}
+#MSearchResults a.SRSymbol:is(:link, :visited, :hover, :focus, :active),
+#MSearchResults a.SRScope:is(:link, :visited, :hover, :focus, :active) {
+  display: block;
+  padding: 0.375rem 0.625rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink) !important;
+  text-decoration: none;
+}
+#MSearchResults a.SRScope:is(:link, :visited, :hover, :focus, :active) {
+  padding-top: 0.125rem;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--color-muted) !important;
+}
+#MSearchResults a.SRSymbol:is(:hover, :focus),
+#MSearchResults .SRChildren a.SRScope:is(:hover, :focus) {
+  background: var(--color-primary-soft);
+  box-shadow: inset 3px 0 0 0 var(--color-primary);
+  outline: none;
+}
+#MSearchResults .SRStatus {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+#MSearchSelectWindow {
+  padding: 0.375rem;
+}
+#MSearchSelectWindow a.SelectItem:is(:link, :visited, :hover, :focus, :active) {
+  padding: 0.25rem 0.625rem;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  color: var(--color-ink) !important;
+  text-decoration: none;
+}
+#MSearchSelectWindow a.SelectItem:hover {
+  background: var(--color-primary-soft);
+}
+
+/* ================================================================== the drawer (docs.css .kit-drawer*, MobileDrawer)
+   opened by the LeviMC bar's menu button up to 960px; the API Reference
+   section's sidebar in it is Doxygen's tree (kit.js moves #nav-tree in while it is open). No blur: the head is
+   opaque canvas. */
+.kit-dox-drawer-root[hidden] {
+  display: none;
+}
+.kit-drawer-root {
+  z-index: 10010;
+}
+.kit-drawer-head {
+  background: var(--color-canvas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.kit-drawer,
+.kit-drawer :is(p, ul, li, nav, span, div) {
+  font-family: var(--font-sans);
+}
+.kit-drawer ul {
+  list-style: none;
+}
+.kit-drawer li {
+  margin: 0;
+}
+.kit-drawer a.kit-drawer-link:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-ink) !important;
+  font-weight: 600;
+  text-decoration: none;
+}
+.kit-drawer a.kit-drawer-link.is-active:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-primary-strong) !important;
+}
+.dark .kit-drawer a.kit-drawer-link.is-active:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-primary) !important;
+}
+.kit-drawer a.kit-drawer-brand:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-ink) !important;
+  text-decoration: none;
+}
+.kit-drawer p.kit-drawer-section-title {
+  font-family: var(--font-sans);
+}
+.kit-drawer-network a:is(:link, :visited, :hover, :focus, :active),
+.kit-drawer-network summary {
+  color: var(--color-ink) !important;
+  text-decoration: none !important;
+  font-weight: inherit;
+}
+/* doxygen-awesome's `details summary` (a ► marker, centred text) must not reach the drawer's Projects section */
+.kit-drawer details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  list-style: none;
+  padding-left: 0.75rem;
+  margin: 0;
+  font-weight: 600;
+}
+.kit-drawer details > summary::before,
+.kit-drawer details > summary::-webkit-details-marker {
+  display: none;
+  content: none;
+}
+.kit-drawer details {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+}
+.kit-drawer .kit-proj a:is(:link, :visited, :hover, :focus, :active) {
+  font-weight: inherit;
+}
+.kit-drawer a.kit-proj-all:hover {
+  color: var(--color-primary-strong) !important;
+}
+/* the tree in the drawer: the docs drawer's sidebar block */
+.kit-dox-drawer-sidebar:empty {
+  display: none;
+}
+.kit-dox-drawer-sidebar #nav-tree {
+  height: auto !important;
+  padding: 0;
+  overflow: visible;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+/* ================================================================== the docs page layout
+   The API pages are laid out like the docs pages (docs.css "doc layout"): the page itself scrolls — not Doxygen's
+   panes — with the project row sticking, the tree as the docs sidebar (sticky, its own scroll, the current tab's
+   name as its title), the page in a centred 76ch column, the page outline as the docs' "On this page" (sticky, from
+   1281px; a dropdown above the title below that) and the LeviMC footer across the page. navtree.js still sizes its
+   panes for in-pane scrolling: the !important rules below undo that. */
+.kit-dox-page {
+  --kit-dox-main: calc(90rem - 3rem - var(--spacing-sidebar) - 3rem);
+}
+#side-nav,
+#container,
+.kit-dox-footer {
+  position: relative;
+  z-index: 1;
+}
+/* Doxygen's breadcrumb bar under the panes: the docs pages have none (the tree shows where the page is) */
+#nav-path {
+  display: none;
+}
+#doc-content {
+  height: auto !important;
+  overflow: visible !important;
+  margin-left: 0 !important;
+  min-width: 0;
+  padding: 2.5rem 0 4.5rem;
+}
+#container {
+  overflow: visible;
+}
+html {
+  scroll-padding-top: calc(var(--spacing-globalbar) + 1rem);
+}
+/* doxygen-awesome's a.anchor scroll margin would add to the page's scroll padding */
+#doc-content a.anchor {
+  scroll-margin-top: 0;
+}
+@media screen and (min-width: 961px) {
+  .kit-dox-page {
+    display: grid;
+    grid-template-columns: minmax(1.5rem, 1fr) var(--spacing-sidebar) 3rem minmax(0, var(--kit-dox-main)) minmax(1.5rem, 1fr);
+    align-items: start;
+  }
+  .kit-dox-page > * {
+    grid-column: 1 / -1;
+  }
+  #side-nav {
+    grid-column: 2;
+    position: sticky !important;
+    top: var(--spacing-globalbar);
+    left: auto;
+    width: auto !important;
+    height: calc(100dvh - var(--spacing-globalbar)) !important;
+    min-width: 0;
+    max-width: none;
+    margin-left: -0.75rem;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+  }
+  #container {
+    grid-column: 4;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 3rem;
+    min-width: 0;
+  }
+  /* the outline column is reserved from the first section heading (the page's top, parsed first — #page-nav comes
+     after a long page), so nothing moves when it arrives or is filled */
+  #container:has(h2.groupheader, h2.memtitle, .doxsection) {
+    grid-template-columns: minmax(0, 1fr) var(--spacing-toc) !important;
+  }
+}
+#side-nav > #splitbar,
+#page-nav-resize-handle {
+  display: none !important;
+}
+/* ≤ 960px: the docs' drawer layout — no sidebar column (the tree opens in the drawer), the docs' 1rem gutter */
+@media screen and (max-width: 960px) {
+  #side-nav {
+    display: none !important;
+  }
+  #doc-content {
+    padding: 1.5rem 1rem 3rem;
+  }
+}
+
+/* ================================================================== the sidebar: Doxygen's tree as the docs sidebar
+   (docs.css .kit-doc-sidebar-inner, .kit-sb-title, .kit-sb-link, .kit-sb-group-btn): chevrons on the right, the
+   dotted rail for nesting, the current page's primary-soft row with its 3px bar, no rounded corners. */
+#nav-tree {
+  height: 100% !important;
+  padding: 2rem 0.5rem 4rem 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+  border: 0;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 1.25rem, #000 calc(100% - 3rem), transparent);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 1.25rem, #000 calc(100% - 3rem), transparent);
+}
+#nav-tree .kit-sb-title {
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+#nav-tree-contents {
+  margin: 0;
+}
+#nav-tree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#nav-tree li {
+  margin: 0;
+  padding: 0;
+}
+/* the root node (the project's main page) — the tab and the brand lead there */
+#nav-tree-contents > ul > li > .item {
+  display: none;
+}
+#nav-tree-contents > ul > li > ul {
+  display: block !important;
+}
+#nav-tree .item {
+  display: flex;
+  align-items: center;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+  overflow: visible;
+  white-space: normal;
+  border-radius: 0 !important;
+  background: none;
+  box-shadow: none;
+  transition:
+    color 0.12s,
+    background-color 0.12s;
+}
+#nav-tree .item:hover {
+  background: color-mix(in srgb, var(--color-ink) 5%, transparent);
+}
+#nav-tree .label {
+  order: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+#nav-tree .label a:is(:link, :visited, :hover, :focus, :active) {
+  display: block;
+  padding: 0.375rem 0.75rem;
+  overflow-wrap: anywhere;
+  font-weight: 400;
+  color: var(--color-muted) !important;
+  text-decoration: none;
+  outline-offset: -2px;
+}
+#nav-tree .item:hover .label a {
+  color: var(--color-ink) !important;
+}
+/* the expand toggle: the docs group button's chevron, on the right */
+#nav-tree .item > a:first-child {
+  order: 2;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  align-self: stretch;
+  padding: 0;
+  outline-offset: -2px;
+}
+#nav-tree .item > span.arrow,
+#nav-tree .item > a > span.arrow {
+  width: auto !important;
+  padding: 0 !important;
+}
+/* leaves: Doxygen's indent spacer is not needed (nesting is the rail) */
+#nav-tree .item > span.arrow {
+  display: none;
+}
+#nav-tree .arrow {
+  display: grid;
+  place-items: center;
+  height: auto;
+  opacity: 1 !important;
+  color: var(--color-muted);
+  font-size: 0;
+}
+#nav-tree span.arrowhead {
+  display: block;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  border: 0 !important;
+  transform: none !important;
+  background: currentColor;
+  -webkit-mask: var(--kit-icon-chevron-right) center / 12px 12px no-repeat;
+  mask: var(--kit-icon-chevron-right) center / 12px 12px no-repeat;
+  transition: transform 0.18s var(--ease-pixel);
+}
+#nav-tree span.arrowhead.opened {
+  transform: rotate(90deg) !important;
+}
+/* parents read as the docs' group buttons; the first level as its section heads */
+#nav-tree .item:has(> a > .arrow) .label a:is(:link, :visited, :hover, :focus, :active) {
+  font-weight: 600;
+  color: var(--color-ink) !important;
+}
+#nav-tree-contents > ul > li > ul > li > .item:has(> a > .arrow) .label {
+  font-size: 0.8125rem;
+}
+#nav-tree-contents > ul > li > ul > li > .item:has(> a > .arrow) .label a:is(:link, :visited, :hover, :focus, :active) {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+#nav-tree-contents > ul > li > ul > li + li > .item:has(> a > .arrow) {
+  margin-top: 0.75rem;
+}
+/* nesting: the docs' dotted rail */
+#nav-tree-contents > ul > li > ul ul {
+  margin: 0.125rem 0 0.375rem 0.875rem;
+  padding-left: 0.375rem;
+  border-left: 2px dotted color-mix(in srgb, var(--color-line-strong) 80%, transparent);
+}
+/* the current page */
+#nav-tree .selected {
+  background: var(--color-primary-soft) !important;
+  box-shadow: inset 3px 0 0 0 var(--color-primary);
+  text-shadow: none;
+}
+#nav-tree .selected::after {
+  display: none;
+}
+#nav-tree .selected .label a:is(:link, :visited, :hover, :focus, :active) {
+  font-weight: 600;
+  color: var(--color-primary-strong) !important;
+}
+.dark #nav-tree .selected .label a:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-primary) !important;
+}
+#nav-sync {
+  display: none;
+}
+/* a windowed long list (patch-navtree.mjs): the row that shows the rest */
+#nav-tree li.kit-tree-more > .item .label a:is(:link, :visited, :hover, :focus, :active) {
+  font-style: normal;
+  color: var(--color-link) !important;
+}
+/* the tree is shown once navtree.js has built and opened it on the current page (kit.js), not while it unfolds */
+#nav-tree:not(.kit-tree-ready) #nav-tree-contents {
+  visibility: hidden;
+}
+/* in the drawer, while the tree loads: static placeholder rows where it will be (no animation) */
+.kit-dox-drawer-sidebar #nav-tree:not(.kit-tree-ready) {
+  min-height: 13.5rem;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 0.7rem,
+    color-mix(in srgb, var(--color-muted) 16%, transparent) 0.7rem 1.4rem,
+    transparent 1.4rem 2.25rem
+  );
+  background-size: 62% 13.5rem;
+  background-position: 0.75rem 0;
+  background-repeat: no-repeat;
+}
+/* the titles wait in the header until kit.js moves them into the panes */
+.kit-dox-pane-titles {
+  display: none !important;
+}
+
+/* ================================================================== "On this page": the docs' TOC (docs.css
+   .kit-toc-title / .kit-toc-list), built by kit.js from the page's sections into #page-nav (Doxygen's own outline,
+   if navtree.js builds it, stays hidden); below 1281px the docs' "On this page" dropdown above the title */
+#page-nav {
+  position: sticky !important;
+  top: var(--spacing-globalbar);
+  align-self: start;
+  width: auto !important;
+  height: auto !important;
+  max-height: calc(100dvh - var(--spacing-globalbar));
+  margin: 0;
+  padding: 2.75rem 0 2rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+  border: 0;
+}
+#page-nav-tree {
+  display: none !important;
+}
+#page-nav .kit-toc-title,
+.kit-dox-toc-mobile {
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+.kit-toc-list,
+.kit-toc-list li {
+  margin: 0;
+  list-style: none;
+}
+#page-nav .kit-toc-list,
+.kit-dox-toc-mobile .kit-toc-list {
+  padding: 0;
+}
+.kit-toc-list a:is(:link, :visited, :focus, :active) {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  color: var(--color-muted) !important;
+  text-decoration: none;
+}
+.kit-toc-list a:hover {
+  color: var(--color-ink) !important;
+  text-decoration: none;
+}
+.kit-toc-list a.is-active:is(:link, :visited, :hover, :focus, :active) {
+  font-weight: 600;
+  color: var(--color-primary-strong) !important;
+}
+.dark .kit-toc-list a.is-active:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-primary) !important;
+}
+@media screen and (max-width: 1280px) {
+  #page-nav {
+    display: none !important;
+  }
+  #container:has(h2.groupheader, h2.memtitle, .doxsection) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+/* the dropdown (docs.css .kit-toc-mobile): its place is kept from the static HTML on pages with sections */
+#doc-content .kit-dox-toc-mobile {
+  max-width: calc(100% - 4px);
+  margin: 0 auto 1.75rem;
+  padding: 0;
+  border: 0;
+}
+.kit-dox-toc-mobile > summary {
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4rem;
+  color: var(--color-ink);
+  background: none;
+  border: 0;
+}
+.kit-dox-toc-mobile > summary::before {
+  display: none;
+  content: none;
+}
+.kit-dox-toc-mobile > summary .kit-dox-chevron {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  opacity: 0.7;
+  background: currentColor;
+  -webkit-mask: var(--kit-icon-chevron-down) center / 12px 12px no-repeat;
+  mask: var(--kit-icon-chevron-down) center / 12px 12px no-repeat;
+  transition: transform 0.18s var(--ease-pixel);
+}
+.kit-dox-toc-mobile .kit-toc-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media screen and (max-width: 1280px) {
+  #container:has(h2.groupheader, h2.memtitle, .doxsection) #doc-content div.header:not(:has(> .kit-dox-toc-mobile)) {
+    padding-top: calc(1.4rem + 1.25rem + 1.75rem);
+  }
+}
+@media screen and (min-width: 1281px) {
+  .kit-dox-toc-mobile {
+    display: none;
+  }
+}
+
+/* ================================================================== the page: a centred reading column with the
+   docs' typography (theme/prose.css) */
+#doc-content div.header,
+#doc-content div.contents,
+#doc-content .kit-dox-toc-mobile {
+  /* the docs' 76ch measure, in rem: ch follows the font, and the page is painted in the fallback face first (a long
+     page paints before the web fonts arrive), so a ch width would jump when they do */
+  max-width: 47.95rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+#doc-content div.header,
+#doc-content div.contents {
+  padding-left: 0;
+  padding-right: 0;
+}
+#doc-content div.header {
+  margin-bottom: 0;
+  border-bottom: 0;
+  background: none;
+}
+div.headertitle {
+  padding: 0;
+}
+div.header .title,
+div.headertitle .title {
+  margin: 0 0 1.5rem;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.6rem + 1.4vw, 2.625rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+div.header .summary {
+  float: none;
+  margin: -0.75rem 0 1rem;
+  font-size: 0.8125rem;
+}
+div.header .summary a:is(:link, :visited) {
+  font-weight: 500;
+}
+div.contents {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+div.contents :is(p, dl, table, div) {
+  font-size: inherit;
+}
+div.contents p,
+div.textblock p,
+.memdoc p {
+  margin: 1.125rem 0;
+  line-height: 1.75;
+}
+.memdoc > p:first-child,
+dl.section dd > p:first-child {
+  margin-top: 0;
+}
+/* the docs' links in running text */
+div.contents :is(p, li, dd, td.mdescRight) a:is(:link, :visited) {
+  font-weight: 500;
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-link) 38%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+div.contents :is(p, li, dd, td.mdescRight) a:hover {
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 2px;
+}
+a.el:is(:link, :visited) {
+  font-weight: 500;
+}
+/* headings (prose.css): H2 with the hairline, H3/H4 lighter */
+div.contents h2:not(.memtitle),
+h2.groupheader {
+  position: relative;
+  margin: 3rem 0 1rem;
+  padding: 1.5rem 0 0;
+  font-family: var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  color: var(--color-ink);
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  box-shadow: none;
+  background: none;
+  text-wrap: balance;
+}
+div.contents > :first-child:is(h2.groupheader, a + h2.groupheader),
+div.contents > table.memberdecls:first-child h2.groupheader,
+div.contents > .textblock:first-child > h2:first-child {
+  margin-top: 1.5rem;
+}
+div.contents h3 {
+  margin: 2.25rem 0 0.75rem;
+  font-size: 1.1875rem;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: -0.006em;
+  color: var(--color-ink);
+}
+div.contents h4 {
+  margin: 1.875rem 0 0.625rem;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+/* pages written in Markdown (the API main page, related pages): their # / ## / ### are h1/h2/h3.doxsection under the
+   page title — the docs' H2 / H3 / H4 */
+div.textblock h1.doxsection {
+  margin: 3rem 0 1rem;
+  padding: 1.5rem 0 0;
+  font-family: var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  color: var(--color-ink);
+  border-top: 1px solid var(--color-line);
+}
+div.textblock h2.doxsection {
+  margin: 2.25rem 0 0.75rem;
+  padding: 0;
+  font-size: 1.1875rem;
+  font-weight: 650;
+  line-height: 1.4;
+  border: 0;
+}
+div.textblock h3.doxsection {
+  margin: 1.875rem 0 0.625rem;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+div.textblock > p:first-child:has(> a.anchor:only-child) {
+  margin: 0;
+}
+div.contents kbd {
+  display: inline-block;
+  min-width: 1.5em;
+  margin: 0 0.2em;
+  padding: 0 0.375em 0.0625em;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: 0;
+  border-radius: 0;
+  box-shadow:
+    0 -2px 0 0 var(--color-line-strong),
+    0 2px 0 0 var(--color-line-strong),
+    -2px 0 0 0 var(--color-line-strong),
+    2px 0 0 0 var(--color-line-strong),
+    inset 0 -2px 0 0 color-mix(in srgb, var(--color-ink) 14%, transparent);
+}
+/* the docs' heading permalink (prose.css .kit-anchor), added by kit.js */
+h2.groupheader .kit-anchor {
+  position: absolute;
+  left: -1.5rem;
+  top: calc(1.5rem + 0.39em - 0.625rem);
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-faint) !important;
+  opacity: 0;
+  text-decoration: none !important;
+  transition: opacity 0.15s;
+}
+h2.groupheader .kit-anchor::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--kit-icon-hash) center / 16px 16px no-repeat;
+  mask: var(--kit-icon-hash) center / 16px 16px no-repeat;
+}
+h2.groupheader:hover .kit-anchor,
+h2.groupheader .kit-anchor:focus-visible {
+  opacity: 1;
+}
+h2.groupheader .kit-anchor:hover {
+  color: var(--color-primary-strong) !important;
+}
+@media (max-width: 960px) {
+  h2.groupheader .kit-anchor {
+    position: relative;
+    left: auto;
+    top: auto;
+    margin: 0 0 0 0.375rem;
+    vertical-align: middle;
+    opacity: 0.55;
+  }
+}
+/* inline code like the docs' */
+div.contents :not(pre, div.line, .fragment *, .memproto *, .memberdecls *) > code,
+div.contents span.tt {
+  padding: 0.125em 0.375em;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--color-code-ink);
+  background: color-mix(in srgb, var(--color-ink) 6%, var(--color-surface));
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-ink) 9%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.dark div.contents :not(pre, div.line, .fragment *, .memproto *, .memberdecls *) > code,
+.dark div.contents span.tt {
+  background: color-mix(in srgb, #ffffff 7%, var(--color-canvas));
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+/* lists: the docs' pixel bullets */
+div.contents :is(.textblock, .memdoc, dd) ul {
+  margin: 1.125rem 0;
+  padding-left: 1.625rem;
+  list-style: none;
+}
+div.contents :is(.textblock, .memdoc, dd) ul > li {
+  position: relative;
+  margin: 0.375rem 0;
+  padding-left: 0.125rem;
+}
+div.contents :is(.textblock, .memdoc, dd) ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.125rem;
+  top: 0.72em;
+  width: 6px;
+  height: 6px;
+  background: var(--color-primary);
+  box-shadow: 2px 2px 0 0 color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+/* "The documentation for this class was generated from …" (Doxygen's own list after a rule) */
+div.contents > hr + ul,
+div.contents > hr {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+.contents hr {
+  height: 1px;
+  margin: 2.5rem 0 1rem;
+  border: 0;
+  background: var(--color-line);
+  box-shadow: none;
+}
+blockquote.doxtable {
+  margin: 1.5rem 0;
+  padding: 0.25rem 1.25rem;
+  color: var(--color-muted);
+  background: none;
+  border: 0;
+  border-left: 3px solid var(--color-line-strong);
+  border-radius: 0;
+}
+
+/* ================================================================== code fragments & source listings: the docs'
+   code block (theme/code.css .kit-code): 13px mono, 1.7 lines, the 2px frame + 6px drop, a quiet gutter */
+div.fragment,
+pre.fragment {
+  margin: 1.5rem 2px;
+  padding: 0.875rem 0;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--color-code-ink);
+  background: var(--color-code-bg) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow:
+    0 -2px 0 0 var(--kit-code-frame),
+    0 2px 0 0 var(--kit-code-frame),
+    -2px 0 0 0 var(--kit-code-frame),
+    2px 0 0 0 var(--kit-code-frame),
+    0 6px 0 0 var(--kit-code-drop) !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+pre.fragment {
+  padding: 0.875rem 1.125rem;
+}
+div.fragment div.line,
+pre.fragment {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+div.fragment div.line {
+  min-height: 1.7em;
+  padding: 0 1.125rem;
+}
+div.fragment span.lineno {
+  min-width: 2.5rem;
+  margin-right: 0.875rem;
+  padding-right: 0.625rem;
+  color: var(--color-code-gutter);
+  background: none !important;
+  border: 0 !important;
+  box-shadow: inset -1px 0 0 var(--color-line) !important;
+  user-select: none;
+}
+div.fragment span.lineno a:is(:link, :visited) {
+  color: var(--color-code-gutter) !important;
+  font-weight: 400;
+}
+/* HTML_CODE_FOLDING: the fold toggles in the gutter */
+div.fragment span.fold {
+  border: 1px solid var(--color-line-strong) !important;
+  background-color: var(--color-surface) !important;
+  border-radius: 0 !important;
+}
+div.fragment .clipboard {
+  color: var(--color-muted);
+}
+div.fragment .clipboard svg {
+  width: 16px;
+  height: 16px;
+}
+div.fragment a.code:is(:link, :visited, :hover, :focus, :active),
+div.fragment a.codeRef:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--fragment-link) !important;
+  font-weight: inherit;
+}
+/* tooltips over code (Doxygen's .ttc / #powerTip): a kit surface */
+#powerTip {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  box-shadow:
+    0 -2px 0 0 var(--color-line-strong),
+    0 2px 0 0 var(--color-line-strong),
+    -2px 0 0 0 var(--color-line-strong),
+    2px 0 0 0 var(--color-line-strong),
+    var(--shadow-float) !important;
+  font-family: var(--font-sans);
+}
+
+/* ================================================================== member tables (table.memberdecls): the docs'
+   table (prose.css .kit-table-wrap) — a full-width surface with a 1px frame, hairlines between the members; the
+   section heading above it is the docs H2. doxygen-awesome makes the table a block (so it shrank to its rows). */
+div.contents table.memberdecls {
+  display: table;
+  width: 100%;
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+}
+table.memberdecls tr.heading > td {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+table.memberdecls tr.heading h2.groupheader {
+  margin-bottom: 1rem;
+}
+table.memberdecls tr:is([class^="memitem"], [class^="memdesc"], .groupHeader, .inherit_header, .inherit) > td {
+  background: var(--color-surface) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: none;
+}
+table.memberdecls tr[class^="memitem"] > td {
+  padding: 0.5rem 0.875rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  vertical-align: top;
+  color: var(--color-code-ink);
+}
+/* every member starts with a hairline (a template's params row and its declaration are one member) */
+table.memberdecls tr[class^="memitem"] > td,
+table.memberdecls tr:is(.groupHeader, .inherit_header) > td {
+  border-top: 1px solid var(--color-line) !important;
+}
+table.memberdecls tr[class^="memitem"]:is(:has(> .memTemplItemLeft), .template:not(:has(> .memTemplParams))) > td {
+  border-top: 0 !important;
+  padding-top: 0;
+}
+table.memberdecls tr.heading + tr > td {
+  border-top: 1px solid var(--color-line) !important;
+}
+/* the frame's sides and bottom */
+table.memberdecls tr:not(.heading) > td:first-child {
+  box-shadow: inset 1px 0 0 var(--color-line) !important;
+}
+table.memberdecls tr:not(.heading) > td:last-child {
+  box-shadow: inset -1px 0 0 var(--color-line) !important;
+}
+table.memberdecls tr:not(.heading) > td:only-child {
+  box-shadow:
+    inset 1px 0 0 var(--color-line),
+    inset -1px 0 0 var(--color-line) !important;
+}
+table.memberdecls tr:not(.heading):last-child > td {
+  border-bottom: 1px solid var(--color-line) !important;
+}
+table.memberdecls :is(td.memItemLeft, td.memTemplItemLeft) {
+  width: 35%;
+  padding-right: 0.5rem !important;
+  text-align: right;
+  white-space: normal;
+  color: var(--color-muted);
+}
+table.memberdecls :is(td.memItemRight, td.memTemplItemRight) {
+  padding-left: 0.375rem !important;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+table.memberdecls :is(td.memItemRight, td.memTemplItemRight) b {
+  font-weight: 650;
+  color: var(--color-ink);
+}
+table.memberdecls td.memTemplParams {
+  padding-bottom: 0.125rem !important;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+table.memberdecls tr[class^="memdesc"] > td {
+  padding: 0 0.875rem 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+table.memberdecls td.mdescLeft {
+  width: 35%;
+}
+table.memberdecls td.mdescRight {
+  padding-left: 0.375rem !important;
+}
+/* member groups and inherited members */
+table.memberdecls tr.groupHeader > td {
+  padding: 0.75rem 0.875rem 0.375rem;
+}
+table.memberdecls tr.groupHeader .groupheader {
+  margin: 0;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  border: 0;
+}
+table.memberdecls tr.inherit_header > td {
+  padding: 0.5rem 0.875rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  text-indent: 0;
+  cursor: pointer;
+}
+table.memberdecls tr.inherit_header img {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 0.375rem;
+  vertical-align: -1px;
+  background: var(--color-muted);
+  -webkit-mask: var(--kit-icon-chevron-right) center / 12px 12px no-repeat;
+  mask: var(--kit-icon-chevron-right) center / 12px 12px no-repeat;
+  object-position: -9999px 0;
+  transition: transform 0.18s var(--ease-pixel);
+}
+table.memberdecls tr.inherit_header img[src$="open.png"] {
+  transform: rotate(90deg);
+}
+table.memberdecls tr.inherit > td {
+  font-size: 0.8125rem;
+}
+tr.separator,
+td.memSeparator {
+  display: none;
+}
+/* phones: one column per member (doxygen-awesome's block rows), still inside the frame */
+@media screen and (max-width: 767px) {
+  table.memberdecls tr[class^="memitem"]:not(.inherit),
+  table.memberdecls tr[class^="memdesc"] {
+    display: block;
+    width: auto !important;
+  }
+  table.memberdecls tr:not(.heading) > td {
+    display: block;
+    width: auto !important;
+  }
+  table.memberdecls :is(td.memItemLeft, td.memItemRight, td.mdescLeft, td.mdescRight, td.memTemplItemLeft, td.memTemplItemRight, td.memTemplParams) {
+    margin: 0 !important;
+    width: auto !important;
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+    text-align: left;
+  }
+  table.memberdecls :is(td.memItemRight, td.memTemplItemRight, td.mdescRight) {
+    padding-left: 0.875rem !important;
+  }
+  table.memberdecls :is(td.memItemLeft, td.memTemplItemLeft) {
+    padding-bottom: 0 !important;
+  }
+  table.memberdecls td.mdescLeft {
+    display: none !important;
+  }
+  table.memberdecls tr:not(.heading) > td:nth-child(n) {
+    box-shadow:
+      inset 1px 0 0 var(--color-line),
+      inset -1px 0 0 var(--color-line) !important;
+  }
+  table.memberdecls tr[class^="memitem"] > td:is(.memItemRight, .memTemplItemRight) {
+    border-top: 0 !important;
+  }
+  table.memberdecls tr:not(.heading):last-child > td:not(:last-child) {
+    border-bottom: 0 !important;
+  }
+}
+
+/* ================================================================== member documentation: a box like the docs'
+   code block — the title bar (h2.memtitle, the code block's head: mono name + the docs' permalink sprite), the
+   prototype as the code, the documentation under it on the surface */
+h2.memtitle {
+  position: relative;
+  float: none;
+  clear: both;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+  min-height: 2.125rem;
+  margin: 2.5rem 2px 0;
+  padding: 0 0.875rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: 0;
+  color: var(--color-ink);
+  word-break: break-all;
+  background: var(--color-code-head) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 2px solid color-mix(in srgb, var(--color-ink) 8%, transparent) !important;
+  box-shadow:
+    0 -2px 0 0 var(--kit-code-frame),
+    -2px 0 0 0 var(--kit-code-frame),
+    2px 0 0 0 var(--kit-code-frame) !important;
+}
+.dark h2.memtitle {
+  border-bottom-color: rgb(0 0 0 / 0.35) !important;
+}
+h2.memtitle::after {
+  display: none !important;
+}
+h2.memtitle > span.permalink {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  margin: 0;
+  font-size: 0;
+}
+h2.memtitle > span.permalink > a:is(:link, :visited, :hover, :focus, :active) {
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  color: var(--color-faint) !important;
+  font-size: 0;
+  text-decoration: none;
+}
+h2.memtitle > span.permalink > a::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  -webkit-mask: var(--kit-icon-hash) center / 12px 12px no-repeat;
+  mask: var(--kit-icon-hash) center / 12px 12px no-repeat;
+}
+h2.memtitle > span.permalink > a:hover {
+  color: var(--color-primary-strong) !important;
+}
+div.memitem {
+  margin: 0 2px 2rem;
+  padding: 0;
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--color-surface);
+  box-shadow:
+    0 2px 0 0 var(--kit-code-frame),
+    -2px 0 0 0 var(--kit-code-frame),
+    2px 0 0 0 var(--kit-code-frame),
+    0 6px 0 0 var(--kit-code-drop) !important;
+}
+/* the member jumped to: the frame in the primary colour */
+a:target + h2.memtitle,
+a:target + h2.memtitle + div.memitem {
+  --kit-code-frame: var(--color-primary);
+}
+div.memproto {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--color-code-ink);
+  background: var(--color-code-bg) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--color-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+div.memproto :is(table.memname, table.memname td, div.memtemplate) {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--color-code-ink);
+}
+div.memproto div.memtemplate {
+  color: var(--color-muted);
+}
+div.memproto td.memname {
+  font-weight: 600;
+}
+div.memproto .paramname,
+div.memproto .paramname em {
+  color: var(--color-ink);
+  font-style: normal;
+}
+span.mlabel {
+  margin: 0 0 0 0.25rem;
+  padding: 0.0625rem 0.375rem;
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+  background: color-mix(in srgb, var(--color-ink) 6%, var(--color-surface));
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+div.memdoc {
+  padding: 0.75rem 1.25rem 0.875rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  background: var(--color-surface) !important;
+  border: 0;
+}
+div.memdoc > :last-child {
+  margin-bottom: 0;
+}
+/* parameters / returns: the docs' micro-labels over a calm list */
+dl.params,
+dl.tparams,
+dl.retval,
+dl.exception {
+  margin: 1rem 0;
+}
+dl.params > dt,
+dl.tparams > dt,
+dl.retval > dt,
+dl.exception > dt,
+dl.section:not(.note, .remark, .warning, .attention, .bug, .deprecated, .todo, .test, .invariant, .pre, .post) > dt {
+  margin: 1rem 0 0.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+dl.section:not(.note, .remark, .warning, .attention, .bug, .deprecated, .todo, .test, .invariant, .pre, .post) {
+  margin: 1rem 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+dl.section:not(.note, .remark, .warning, .attention, .bug, .deprecated, .todo, .test, .invariant, .pre, .post) > dd {
+  margin: 0;
+}
+table.params td {
+  padding: 0.125rem 0.75rem 0.125rem 0;
+  vertical-align: top;
+}
+table.params td.paramname {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-code-ink);
+  white-space: nowrap;
+}
+table.params td.paramdir {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+/* @note / @warning / @bug …: the docs' admonitions (theme/admonitions.css .kit-adm): the kind's tinted surface, a
+   2px frame in the kind's colour, the 4px bar, the title row with the kind's sprite */
+dl.section:is(.note, .remark, .warning, .attention, .bug, .deprecated, .todo, .test, .invariant, .pre, .post) {
+  --adm: var(--color-adm-note);
+  --adm-icon: var(--kit-icon-book-quill);
+  --adm-frame: color-mix(in srgb, var(--adm) 32%, var(--color-line));
+  position: relative;
+  margin: 1.5rem 2px;
+  padding: 0 !important;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--color-ink);
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: color-mix(in srgb, var(--adm) 6.5%, var(--color-surface)) !important;
+  box-shadow:
+    0 -2px 0 0 var(--adm-frame),
+    0 2px 0 0 var(--adm-frame),
+    -2px 0 0 0 var(--adm-frame),
+    2px 0 0 0 var(--adm-frame),
+    inset 4px 0 0 0 var(--adm) !important;
+}
+.dark dl.section:is(.note, .remark, .warning, .attention, .bug, .deprecated, .todo, .test, .invariant, .pre, .post) {
+  --adm-frame: color-mix(in srgb, var(--adm) 30%, var(--color-line));
+  background: color-mix(in srgb, var(--adm) 9%, var(--color-surface)) !important;
+}
+dl.section:is(.note, .remark, .warning, .attention, .bug, .deprecated, .todo, .test, .invariant, .pre, .post) > dt {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0.75rem 1rem 0.125rem 1.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-ink) !important;
+}
+dl.section:is(.note, .remark, .warning, .attention, .bug, .deprecated, .todo, .test, .invariant, .pre, .post) > dt::before {
+  content: "";
+  flex: none;
+  position: static;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 0;
+  background: var(--adm-icon) center / 16px 16px no-repeat;
+  image-rendering: pixelated;
+}
+dl.section:is(.note, .remark, .warning, .attention, .bug, .deprecated, .todo, .test, .invariant, .pre, .post) > dd {
+  margin: 0;
+  padding: 0.25rem 1.125rem 0.875rem 1.25rem;
+}
+dl.section:is(.warning, .attention) {
+  --adm: var(--color-adm-warning);
+  --adm-icon: var(--kit-icon-torch);
+}
+dl.section.bug {
+  --adm: var(--color-adm-bug);
+  --adm-icon: var(--kit-icon-bug);
+}
+dl.section.deprecated {
+  --adm: var(--color-adm-failure);
+  --adm-icon: var(--kit-icon-tnt);
+}
+dl.section.todo {
+  --adm: var(--color-adm-example);
+  --adm-icon: var(--kit-icon-potion);
+}
+dl.section.test {
+  --adm: var(--color-adm-info);
+  --adm-icon: var(--kit-icon-compass);
+}
+dl.section:is(.invariant, .pre, .post) {
+  --adm: var(--color-adm-success);
+  --adm-icon: var(--kit-icon-diamond);
+}
+/* other Doxygen boxes: lists of references, "Definition at line …" */
+dl.reflist {
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  background: var(--color-surface);
+}
+p.reference,
+p.definition {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+/* the big pages render what is on screen only: members and declaration tables outside the viewport skip style,
+   layout and paint (anchors still land: the browser lays out a target before scrolling to it) */
+#doc-content div.memitem,
+#doc-content table.memberdecls {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 240px;
+}
+
+/* ================================================================== tables: the docs' table (prose.css) */
+div.contents :is(table.doxtable, table.markdownTable, table.fieldtable) {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  margin: 1.5rem 0;
+  padding: 0;
+  overflow-x: auto;
+  border: 0;
+  border-collapse: collapse;
+  border-radius: 0;
+  background: var(--color-surface);
+  box-shadow:
+    0 -1px 0 0 var(--color-line),
+    0 1px 0 0 var(--color-line),
+    -1px 0 0 0 var(--color-line),
+    1px 0 0 0 var(--color-line);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+div.contents :is(table.doxtable, table.markdownTable, table.fieldtable) > tbody {
+  display: table;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-collapse: collapse;
+  box-shadow: none;
+  border-radius: 0;
+}
+div.contents :is(table.doxtable, table.markdownTable, table.fieldtable) :is(th, td) {
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: inherit;
+  color: var(--color-ink);
+  background: none;
+  border: 0;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--color-line);
+  box-shadow: none;
+}
+div.contents :is(table.doxtable, table.markdownTable, table.fieldtable) :is(th, td) + :is(th, td) {
+  border-left: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent);
+}
+div.contents :is(table.doxtable, table.markdownTable, table.fieldtable) th {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-ink) 4%, var(--color-surface)) !important;
+  border-bottom: 2px solid var(--color-line-strong);
+}
+div.contents :is(table.doxtable, table.markdownTable, table.fieldtable) tr:nth-child(even) > td {
+  background: color-mix(in srgb, var(--color-ink) 1.8%, transparent);
+}
+div.contents :is(table.doxtable, table.markdownTable, table.fieldtable) tr:last-child > td {
+  border-bottom: 0;
+}
+table.fieldtable td.fieldname {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-code-ink);
+  white-space: nowrap;
+}
+table.fieldtable td.fielddoc p:first-child {
+  margin-top: 0;
+}
+table.fieldtable td.fielddoc p:last-child {
+  margin-bottom: 0;
+}
+
+/* ================================================================== indexes: class/file/namespace lists, A–Z */
+/* the list tables (annotated, files, namespaces, hierarchy): a full-width surface with hairlines */
+div.contents table.directory {
+  display: table;
+  width: 100%;
+  margin: 1rem 0 0;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-line);
+}
+div.contents table.directory > tbody {
+  display: table-row-group;
+}
+table.directory tr td {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  vertical-align: top;
+  border: 0;
+  border-bottom: 1px solid var(--color-line);
+  background: none !important;
+}
+table.directory tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--color-ink) 1.8%, transparent) !important;
+}
+table.directory td.desc {
+  color: var(--color-muted);
+  border-left: 0;
+}
+table.directory td.entry {
+  width: 1%;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+table.directory td.entry > * {
+  vertical-align: middle;
+}
+table.directory .arrow {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 22px;
+  color: var(--color-muted);
+  font-size: 0;
+  cursor: pointer;
+}
+table.directory .arrow::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  -webkit-mask: var(--kit-icon-chevron-right) center / 12px 12px no-repeat;
+  mask: var(--kit-icon-chevron-right) center / 12px 12px no-repeat;
+  transition: transform 0.18s var(--ease-pixel);
+}
+table.directory .arrow.opened::before,
+table.directory .arrow:has(.opened)::before {
+  transform: rotate(90deg);
+}
+table.directory .arrow > * {
+  display: none;
+}
+table.directory :is(.iconfolder, .iconfopen, .icondoc, .icona, .iconc, .iconn, .iconp, .iconpage, .icondir) {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin: 0 0.375rem -3px 0;
+  border: 0;
+  border-radius: 0;
+  font-size: 0;
+  box-shadow: none;
+  /* the kit's sprites: a chest for folders, a sheet of paper for files and pages */
+  background: var(--kit-icon-paper) center / 16px 16px no-repeat !important;
+  image-rendering: pixelated;
+}
+table.directory :is(.iconfolder, .iconfopen, .icondir) {
+  background-image: var(--kit-icon-chest) !important;
+}
+table.directory :is(.iconfolder, .iconfopen, .icondoc, .icona, .iconc, .iconn, .iconp, .iconpage, .icondir) > *,
+table.directory :is(.iconfolder, .iconfopen, .icondoc, .icona, .iconc, .iconn, .iconp, .iconpage, .icondir)::before,
+table.directory :is(.iconfolder, .iconfopen, .icondoc, .icona, .iconc, .iconn, .iconp, .iconpage, .icondir)::after {
+  display: none;
+}
+div.levels {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-faint);
+}
+div.levels span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  margin: 0 0 0 0.125rem;
+  padding: 0 0.25rem;
+  color: var(--color-link);
+  cursor: pointer;
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+div.levels span:hover {
+  color: var(--color-ink);
+}
+/* the A–Z bar (classes.html, functions_*.html): the kit's hotbar */
+div.qindex,
+div.contents div.qindex,
+div.navtab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 6px;
+  width: auto;
+  margin: 0 2px 1.5rem;
+  padding: 2px 0;
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+div.qindex a.qindex:is(:link, :visited, :hover, :focus, :active),
+div.navtab a:is(:link, :visited, :hover, :focus, :active) {
+  display: grid;
+  place-items: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.375rem;
+  font: 600 0.8125rem / 1 var(--font-sans);
+  color: var(--color-muted) !important;
+  text-decoration: none;
+  background: var(--color-surface);
+  box-shadow:
+    0 -2px 0 0 var(--color-line),
+    0 2px 0 0 var(--color-line),
+    -2px 0 0 0 var(--color-line),
+    2px 0 0 0 var(--color-line);
+}
+div.qindex a.qindex:hover,
+div.navtab a:hover {
+  color: var(--color-ink) !important;
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+}
+div.qindex a.qindexHL:is(:link, :visited, :hover, :focus, :active),
+div.navtab a.qindexHL:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-primary-strong) !important;
+  box-shadow:
+    inset 0 -2px 0 0 var(--color-primary),
+    0 -2px 0 0 var(--color-line),
+    0 2px 0 0 var(--color-line),
+    -2px 0 0 0 var(--color-line),
+    2px 0 0 0 var(--color-line);
+}
+/* the class index columns: real columns, names wrap inside them */
+div.classindex {
+  max-width: 100%;
+}
+div.classindex dl.classindex {
+  display: block;
+  margin: 0;
+  padding: 0;
+  columns: 14rem;
+  column-gap: 2rem;
+  background: none !important;
+}
+div.classindex dl.classindex > dt {
+  column-span: all;
+}
+div.classindex dd,
+dl.classindex dd {
+  display: block;
+  width: auto;
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  break-inside: avoid;
+}
+div.classindex dt,
+dl.classindex dt,
+div.ah,
+div.contents > h3 {
+  margin: 1.5rem 0 0.5rem;
+  padding: 0.75rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-ink);
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  border-radius: 0;
+  box-shadow: none;
+  break-after: avoid;
+}
+div.classindex dt:first-child,
+dl.classindex:first-child dt {
+  margin-top: 0;
+}
+/* member index lists (functions_*.html, globals_*.html) */
+div.contents > div.textblock > ul > li,
+div.contents > ul > li {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* ================================================================== diagrams & images */
+div.dynheader {
+  margin: 1rem 0 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  cursor: pointer;
+  user-select: none;
+}
+div.dynheader span.arrow,
+span.arrowhead {
+  color: var(--color-muted);
+}
+div.dynsection,
+div.center {
+  max-width: 100%;
+  overflow-x: auto;
+}
+div.dynsection img,
+div.center img[usemap] {
+  max-width: none;
+  padding: 0.75rem;
+  background: #fffdf7;
+  box-shadow: 0 0 0 1px var(--color-line);
+}
+/* Doxygen's built-in class diagrams are black-on-white PNGs: dimmed and inverted in the dark theme */
+html.dark-mode div.contents div.dyncontent img,
+html.dark-mode div.contents center img,
+html.dark-mode div.dynsection img[src$=".png"],
+html.dark-mode div.center img[usemap] {
+  filter: invert(0.88) hue-rotate(180deg);
+  background: #fffdf7;
+}
+
+/* ================================================================== the footer */
+.kit-dox-footer .kit-footer {
+  margin-top: 4rem;
+}
+.kit-dox-footer {
+  grid-column: 1 / -1;
+}
+
+/* ================================================================== kit chrome inside Doxygen
+   doxygen-awesome forces `a:link … { color: var(--link-color) !important }`; restore the chrome colours. */
+.kit-gbar a:is(:link, :visited, :hover, :focus, :active),
+.kit-gbar summary {
+  color: var(--gbar-muted) !important;
+  font-weight: inherit;
+  text-decoration: none !important;
+  background: transparent;
+}
+.kit-gbar :is(a.kit-gbar-link, summary.kit-gbar-link, a.kit-gbar-more-link, summary.kit-gbar-more-link) {
+  font-weight: 500;
+}
+.kit-gbar a.kit-gbar-brand:is(:link, :visited, :hover, :focus, :active),
+.kit-gbar a.kit-gbar-link:is(:hover, [aria-current="page"]),
+.kit-gbar summary.kit-gbar-link:is(:hover, [aria-current="page"]),
+.kit-gbar .kit-menu[open] > summary.kit-gbar-link,
+.kit-gbar a.kit-gbar-icon:hover {
+  color: #ffffff !important;
+}
+.kit-gbar .kit-menu-panel a:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-ink) !important;
+}
+/* the footer's own colours (kit chrome.css: --kf-*) */
+.kit-footer a:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--kf-ink) !important;
+  font-weight: inherit;
+  text-decoration: none !important;
+}
+.kit-footer a.kit-footer-social-link:is(:link, :visited, :focus, :active) {
+  background: var(--kf-tile);
+}
+.kit-footer a.kit-footer-social-link:hover {
+  background: var(--kf-tile-hover);
+}
+.kit-menu-panel a.kit-proj-all:hover {
+  color: var(--color-primary-strong) !important;
+}
+
+/* ================================================================== print: the page only */
+@media print {
+  body > .kit-gbar,
+  #top,
+  #side-nav,
+  #page-nav,
+  .kit-dox-toc-mobile,
+  .kit-dox-footer,
+  .kit-backdrop,
+  .kit-backdrop-scene {
+    display: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #nav-tree span.arrowhead,
+  table.directory .arrow::before,
+  .kit-dox-toc-mobile > summary .kit-dox-chevron {
+    transition: none;
+  }
+}
+
+/* ================================================================== kit 2.22: Doxygen's search box in the LeviMC bar
+   (the docs' .kit-gbar-search frame), the site's column head (docs.css .kit-sitenav) over the tree */
+.kit-gbar .kit-dox-search {
+  cursor: text;
+}
+.kit-gbar .kit-dox-search :is(#MSearchBox, #MSearchBox .left, #MSearchField) {
+  height: 1.625rem;
+}
+.kit-gbar .kit-dox-search #MSearchField {
+  line-height: 1.625rem;
+  color: #fff;
+}
+.kit-gbar .kit-dox-search #MSearchField::placeholder {
+  color: var(--gbar-muted);
+}
+.kit-gbar .kit-dox-search #MSearchClose {
+  color: var(--gbar-muted) !important;
+}
+@media (max-width: 1180px) {
+  .kit-gbar .kit-dox-search:is(:focus-within, :has(.MSearchBoxActive)) #MSearchBox {
+    height: 2rem;
+    background: var(--gbar-bg) !important;
+    box-shadow:
+      0 0 0 2px var(--color-primary),
+      -1.5rem 0 1rem var(--gbar-bg) !important;
+  }
+}
+#nav-tree .kit-dox-sitenav {
+  margin-bottom: 1rem;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+#nav-tree .kit-dox-sitenav ul,
+#nav-tree .kit-dox-sitenav li {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#nav-tree .kit-dox-sitenav a.kit-site-brand:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-ink) !important;
+  text-decoration: none;
+}
+#nav-tree .kit-dox-sitenav a.kit-sn-section-btn:is(:link, :visited, :focus, :active) {
+  color: var(--color-faint) !important;
+  font-weight: 700;
+  text-decoration: none;
+}
+#nav-tree .kit-dox-sitenav a.kit-sn-section-btn:hover,
+#nav-tree .kit-dox-sitenav a.kit-sn-section-btn.is-active:is(:link, :visited, :hover, :focus, :active) {
+  color: var(--color-ink) !important;
+}
+/* doxygen-awesome's #nav-tree a { padding: 0; margin … }: the column head keeps the docs' spacing */
+#nav-tree .kit-dox-sitenav a.kit-sn-brand {
+  margin: 0 0 1rem;
+  padding: 0.375rem 0.75rem 1rem;
+  font-size: inherit;
+  border-bottom: 2px dotted color-mix(in srgb, var(--color-line-strong) 80%, transparent);
+}
+#nav-tree .kit-dox-sitenav a.kit-sn-section-btn {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+#nav-tree .kit-dox-sitenav .kit-sn-section + .kit-sn-section {
+  margin-top: 0.25rem;
+}

@@ -1,0 +1,61 @@
+# 驱动游戏
+
+每个游戏在 `127.0.0.1` 上提供一个 WebSocket：每条消息是一个 JSON 请求，游戏处理完后回复一条。请优先使用 bedboo，其次用 `ui`，最后才模拟输入（[原因](/zh/guide/operation-modes#用哪一种)）。如果还没装好，可参考教程[用 Be.D.D. 驱动游戏客户端](https://levimc.org/zh-Hans/tutorials/automate/bedd/)来配置电脑并运行第一个脚本。
+
+## 启动游戏
+
+```powershell
+BeDD.exe launch --slot 1 --json
+# {"pid":12345,"instance":"1.26.60.05-1","instanceDir":"…","url":"ws://127.0.0.1:53021/v1","token":"9f3c…","label":"…"}
+```
+
+`launch` 会克隆实例、安装或更新模组（[用哪个构建](/zh/guide/installs#升级)），在后台启动游戏，打开[管理窗口](/zh/guide/several-games#管理窗口)，等待 WebSocket 就绪，输出结果后退出；游戏会继续运行。若实例已在运行，则返回退出码 5。
+
+| 参数 | |
+|---|---|
+| `--slot N` / `<instance>` / `--dir <folder>` | 克隆 `<gameVersion>-<N>`（默认 1）、指定名字的实例，或任意含 `Minecraft.Windows.exe` 的目录 |
+| `--label <text>` | 管理窗口里的名字（默认取 `BEDD_LABEL`，否则为调用方项目） |
+| `--exclusive-signaling` | 等待其他游戏关闭；独占整台电脑（[规矩](/zh/guide/several-games#并行测试的规矩)） |
+| `--keep-mod` | 保留克隆里的模组 |
+| `--no-manager` | 不启动管理窗口 |
+| `--timeout` / `--lock-timeout` | 等待 WebSocket（`3m`）/ 信令锁（`2h`）的超时时间 |
+| `--detach` | 进程一启动就返回；`url`/`token` 为 `null` |
+
+`BeDD.exe ps` 列出运行中的游戏；`BeDD.exe stop --pid <pid>`（或 `stop <instance>`）强制结束一个游戏。
+
+## 选哪个游戏
+
+`BeDD.exe ps --json`（或 WebSocket 监听期间存在的 `%LOCALAPPDATA%\BeDD\run\<pid>.json`）会给出每个游戏的 `url`、`token` 和 `instance`。请按 `instance` 选择自己的游戏，切勿按进程名选择。连接时使用 `?token=<token>` 或 `Authorization: Bearer <token>`；令牌在每次启动时都会重新生成。详见[连接](/zh/reference/websocket#连接)。
+
+## 用 bedboo
+
+```js
+import bedboo from 'bedboo';
+const bot = bedboo.createBot({ transport: 'bedd', bedd: { url: game.url, token: game.token } });
+bot.once('spawn', () => bot.chat('/summon cow'));
+```
+
+## 一个小客户端
+
+不用 bedboo 时，任何 WebSocket 客户端都可以：发送 `{id, op, ...}`，按 `id` 匹配回复，并跳过二进制（tap）帧。本指南用到的 Node 24 `call(op, args)` 辅助函数见[连接](/zh/reference/websocket#连接)。按模式分类的操作见[操作模式](/zh/guide/operation-modes)；全部字段见[WebSocket 协议](/zh/reference/websocket)。
+
+## 按键名
+
+`key` 接受按键名（`ESC`、`ENTER`、`F1`..`F24` 等，见 [input 操作](/zh/reference/websocket#input-操作)）或任意 `vk`。发送聊天：在 bedboo 中用 `bot.chat('/summon cow')`；否则依次发送 `key T`、`text`、`key ENTER`。
+
+## 位置
+
+`mouse` 接受 `x`、`y` 像素坐标，`rx`、`ry` 比例坐标，或 `ui` 的 `ref`（与窗口大小无关）。使用坐标时需固定窗口大小（配置 `clientWidth`/`clientHeight` 或调用 `window`）。鼠标被锁定时，`raw` 用于转动视角。
+
+## 服务器
+
+```js
+await call('join', { host: '127.0.0.1', port: 19140, wait: true });   // join, wait until in the world
+(await call('join')).connection;                                      // none | local | remote
+```
+
+在标题界面或世界里都能用（在世界里会先退出当前世界）；若加入出错或超出 `timeoutMs`（60000）则失败。连接本机以外的服务器需要开启 [Remote 世界模式](/zh/guide/modes)。
+
+## 多条连接
+
+每个游戏最多接受 `wsMaxClients`（8）条连接，每条连接的请求按顺序处理。某条连接关闭时，它持有的 `key`/`mouse` 按住状态以及无终点的 `button` 按住状态都会松开；而 `button` 的 `click`/`holdTicks`/`releaseOn` 和 `input`（直到 `ttlMs`/`ttlTicks` 结束）会继续执行，因此一次性调用方发完请求即可直接断开。详见[多个客户端](/zh/reference/websocket#多个客户端)。

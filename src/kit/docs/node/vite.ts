@@ -1,0 +1,495 @@
+// Vite plugin for levimc-kit docs sites.
+//
+//   // scripts/docs-sites.mjs makes each site's Vite config:
+//   plugins: [kitDocs(docs, { configRoot: 'content/<Site>', workDir: '.build/docs/<Site>' })]
+//
+// It compiles all markdown at build start, exposes the site through virtual modules (one lazily loaded
+// chunk per page), serves the SPA in dev, and emits search indexes, sitemap.xml, .nojekyll and content
+// assets for the client build. `node src/kit/docs/build.mjs` runs client build → SSR build → prerender.
+
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
+import { dirname, extname, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { Plugin, PluginOption, ViteDevServer } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { resolveConfig, type DocsConfig, type ResolvedConfig } from './config.ts';
+import { buildSite, type BuiltSite } from './site.ts';
+import { localeRedirectScript } from '../shared/head.ts';
+import { PAGE_META_KEYS, type SiteData } from '../shared/types.ts';
+import { pathUrl, siteRoots, sitePath } from '../shared/routing.ts';
+import { createThemeInitScript } from '../../components/theme.ts';
+import { UI_LOCALES } from '../../components/i18n.ts';
+import { GOOGLE_FONTS_HREF } from '../../components/fonts.ts';
+import { noJsDarkCss } from '../../static/nojs-dark.mjs';
+
+const SITE_ID = 'virtual:kit-docs/site';
+const PAGE_PREFIX = 'virtual:kit-docs/page/';
+const TOKENS_ID = 'virtual:kit-docs/tokens.css';
+const LAYOUTS_ID = 'virtual:kit-docs/layouts';
+const R_LAYOUTS = '\0kit-docs:layouts';
+const R_SITE = '\0kit-docs:site';
+const R_PAGE = '\0kit-docs:page:';
+const R_TOKENS = '/__kit-docs-tokens.css';
+
+export interface KitDocsPluginOptions {
+  /** Include @vitejs/plugin-react (default true). */
+  react?: boolean;
+  /** Include @tailwindcss/vite (default true). */
+  tailwind?: boolean;
+  /**
+   * The folder the config's relative paths (contentDir, publicDir, layouts, outDir) are resolved against. Default:
+   * Vite's root. levimc.org builds every site with the repository as Vite's root (the kit must be inside it) and
+   * the site's folder (content/<Site>/) here.
+   */
+  configRoot?: string;
+  /** Where the build keeps its intermediate files (the SSR bundle, client-pages.json, warnings.txt). Default: <root>/.kit. */
+  workDir?: string;
+}
+
+const here = dirname(fileURLToPath(import.meta.url));
+export const KIT_DOCS_APP_DIR = resolve(here, '../app');
+
+/**
+ * The pre-paint script's chrome locales: a placeholder that matches nothing (index 0 = "the content language"),
+ * then the kit's UI languages none of the site's locales covers (by base language). A stored preference that maps
+ * past index 0 differs from the page's language → html.kit-chrome-pending until the app re-renders the chrome.
+ */
+function chromeOnlyLocales(site: Pick<SiteData, 'locales'>): string[] {
+  const bases = new Set(site.locales.map((l) => l.lang.toLowerCase().split('-')[0]));
+  return ['x-kit-content', ...UI_LOCALES.filter((u) => !bases.has(u.toLowerCase().split('-')[0]!))];
+}
+
+/**
+ * dist/_kit/search-docs.json (kit 2.27): every document of the site's search indexes, per locale, with its absolute
+ * URL and full text. levimc.org's deploy builds the site-wide search of every LeviMC site from these files
+ * (`scripts/search-index.mjs`); the site's own indexes (assets/search-*.json) stay its fallback.
+ */
+export const SEARCH_DOCS_FILE = '_kit/search-docs.json';
+
+export function searchDocsJson(b: Pick<BuiltSite, 'site' | 'searchDocs'>): Record<string, unknown> {
+  const locales: Record<string, unknown> = {};
+  for (const l of b.site.locales) {
+    locales[l.code] = {
+      lang: l.lang,
+      docs: (b.searchDocs.get(l.code) ?? []).map((d) => ({ url: pathUrl(b.site, d.path), title: d.title, page: d.page, crumbs: d.crumbs, text: d.text })),
+    };
+  }
+  return { title: b.site.title, base: b.site.base, project: b.site.project ?? null, locales };
+}
+
+/** dist/_kit/nav.json: the docs' sections and resources per locale (generates the Doxygen API header, kit 2.19). */
+export function navJson(site: SiteData): Record<string, unknown> {
+  const abs = (link: string, external?: boolean) => (external ? link : pathUrl(site, link));
+  const out: Record<string, unknown> = {};
+  for (const l of site.locales) {
+    out[l.code] = {
+      lang: l.lang,
+      label: l.label,
+      prefix: l.prefix,
+      title: site.title,
+      home: pathUrl(site, site.homePaths[l.code] ?? l.prefix),
+      tabs: (site.nav[l.code] ?? [])
+        .filter((it) => it.link !== undefined)
+        .map((it) => ({ text: it.text, link: abs(it.link!, it.external), ...(it.external ? { external: true } : {}) })),
+      resources: (site.resources[l.code] ?? []).map((r) => ({ kind: r.kind, text: r.text, link: abs(r.link, r.external) })),
+    };
+  }
+  return out;
+}
+
+/** A redirect page (canonical, meta refresh, location.replace keeping the query and #hash) to an absolute URL. */
+function redirectHtml(url: string): string {
+  const attr = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return (
+    `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Redirecting…</title>\n<meta name="robots" content="noindex">\n` +
+    `<link rel="canonical" href="${attr}">\n<meta http-equiv="refresh" content="0; url=${attr}">\n` +
+    `<script>location.replace(${JSON.stringify(url).replace(/</g, '\\u003c')}+location.search+location.hash);</script>\n</head>\n` +
+    `<body><p>This page has moved to <a href="${attr}">${attr}</a>.</p></body>\n</html>\n`
+  );
+}
+
+function hash8(s: string) {
+  return createHash('sha256').update(s).digest('hex').slice(0, 8);
+}
+
+export function kitDocs(userConfig: DocsConfig, options: KitDocsPluginOptions = {}): PluginOption[] {
+  let root = process.cwd();
+  let workDir = join(root, '.kit');
+  let cfg: ResolvedConfig;
+  let built: BuiltSite | null = null;
+  let building: Promise<BuiltSite> | null = null;
+  let isSsr = false;
+  let isBuild = false;
+  let searchFiles = new Map<string, { file: string; json: string }>();
+  /** localeFirst: redirect pages at language-first URLs (outside base), relative to outRoot (generateBundle → writeBundle). */
+  let localizedRedirects: { file: string; html: string }[] = [];
+
+  const appHtml = join(KIT_DOCS_APP_DIR, 'index.html');
+  const entryServer = join(KIT_DOCS_APP_DIR, 'entry-server.tsx');
+
+  const rebuild = async (changed?: Set<string>) => {
+    building = buildSite(cfg, { changed }).then((b) => {
+      built = b;
+      searchFiles = new Map(
+        [...b.searchIndexes].map(([code, json]) => [code, { file: `assets/search-${code.replace(/[^\w-]/g, '_')}.${hash8(json)}.json`, json }]),
+      );
+      b.site.search = Object.fromEntries([...searchFiles].map(([code, f]) => [code, cfg.base + f.file]));
+      return b;
+    });
+    return building;
+  };
+  const ensure = async () => built ?? (await (building ?? rebuild()));
+
+  const reportWarnings = (b: BuiltSite, log: (m: string) => void) => {
+    if (!b.warnings.length) return;
+    log(`[kit-docs] ${b.warnings.length} warning(s):`);
+    for (const w of b.warnings.slice(0, 200)) log(`  - ${w}`);
+    if (b.warnings.length > 200) log(`  … and ${b.warnings.length - 200} more (see .kit/warnings.txt in the site's build folder)`);
+  };
+
+  const plugin: Plugin = {
+    name: 'levimc-kit-docs',
+    enforce: 'pre',
+    config(vc, env) {
+      root = vc.root ? resolve(vc.root) : process.cwd();
+      workDir = options.workDir ? resolve(options.workDir) : join(root, '.kit');
+      cfg = resolveConfig(userConfig, options.configRoot ? resolve(options.configRoot) : root);
+      isSsr = !!env.isSsrBuild;
+      isBuild = env.command === 'build';
+      return {
+        base: cfg.base,
+        appType: 'custom',
+        publicDir: cfg.publicRoot ?? false,
+        resolve: { dedupe: ['react', 'react-dom', 'react-router'] },
+        server: { fs: { allow: [root, cfg.contentRoot, KIT_DOCS_APP_DIR, resolve(KIT_DOCS_APP_DIR, '../..')] } },
+        build: isSsr
+          ? {
+              outDir: join(workDir, 'ssr'),
+              emptyOutDir: true,
+              ssr: entryServer,
+              copyPublicDir: false,
+              rollupOptions: { input: entryServer, output: { entryFileNames: 'entry-server.js', format: 'es' } },
+            }
+          : {
+              // localeFirst: outDir mirrors the host root, base's own files go to its folder (the locales' pages are
+              // written next to it by the prerender)
+              outDir: cfg.baseOutRoot,
+              emptyOutDir: true,
+              assetsDir: 'assets',
+              rollupOptions: {
+                input: { app: appHtml },
+                output: {
+                  chunkFileNames: (chunk) => (chunk.facadeModuleId?.startsWith(R_PAGE) ? 'assets/pages/[name].[hash].js' : 'assets/[name].[hash].js'),
+                  // React and the router in a chunk of their own (kit 2.26.1): the app chunk keeps the site's code and
+                  // its route table, which grows with the pages × locales (LeviLauncher: 9 locales), and the
+                  // libraries stay cached across deploys that change only the content.
+                  manualChunks: (id: string) => (/[\\/]node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/.test(id) ? 'react' : undefined),
+                },
+              },
+            },
+        ssr: { noExternal: [] },
+      };
+    },
+    async buildStart() {
+      // localeFirst: Vite empties base's folder only; the locales' folders (dist/zh-Hans/<base>…) go too
+      if (isBuild && !isSsr && cfg.localeFirst && cfg.outRoot !== cfg.baseOutRoot) {
+        if (!cfg.outRoot.startsWith(root + sep)) throw new Error(`[kit-docs] outDir ${cfg.outRoot} is outside the project (${root})`);
+        rmSync(cfg.outRoot, { recursive: true, force: true });
+      }
+      const b = await rebuild();
+      if (isBuild && !isSsr) {
+        reportWarnings(b, (m) => this.warn(m));
+        mkdirSync(workDir, { recursive: true });
+        writeFileSync(join(workDir, 'warnings.txt'), b.warnings.join('\n') + '\n');
+      }
+    },
+    resolveId(id) {
+      if (id === SITE_ID) return R_SITE;
+      if (id.startsWith(PAGE_PREFIX)) return R_PAGE + id.slice(PAGE_PREFIX.length);
+      if (id === TOKENS_ID) return R_TOKENS;
+      if (id === LAYOUTS_ID) return R_LAYOUTS;
+      return null;
+    },
+    async load(id, opts) {
+      if (id === R_SITE) {
+        const b = await ensure();
+        const pages = b.routes
+          .map((r) => `${JSON.stringify(r.page)}: () => import(${JSON.stringify(PAGE_PREFIX + r.page)})`)
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(',\n  ');
+        // The browser gets a slim route table (routing, titles, alternates): the per-page meta (description, edit
+        // link, dates, prev/next) travels with each page (its chunk, or #kit-page-data) and is merged on render.
+        // JSON.parse of a string literal parses faster than the same object literal.
+        const routes = opts?.ssr
+          ? b.routes
+          : b.routes.map((r) => {
+              const slim: Record<string, unknown> = { ...r };
+              for (const k of PAGE_META_KEYS) delete slim[k];
+              return slim;
+            });
+        return (
+          `export const site = JSON.parse(${JSON.stringify(JSON.stringify(b.site))});\n` +
+          `export const routes = JSON.parse(${JSON.stringify(JSON.stringify(routes))});\n` +
+          `export const pages = {\n  ${pages}\n};\n`
+        );
+      }
+      if (id.startsWith(R_PAGE)) {
+        const b = await ensure();
+        const pageId = id.slice(R_PAGE.length);
+        const page = [...b.pages.values()].find((p) => p.route.page === pageId);
+        if (!page) return 'export default { html: "", toc: [] }';
+        const data = { html: page.html, toc: page.toc, meta: page.meta, hero: page.hero, features: page.features, frontmatter: page.frontmatter };
+        return `export default ${JSON.stringify(data)};`;
+      }
+      if (id === R_TOKENS) {
+        const b = await ensure();
+        return b.tokenCss;
+      }
+      if (id === R_LAYOUTS) {
+        const entries = Object.entries(cfg.layouts ?? {});
+        return (
+          entries.map(([, file], i) => `import L${i} from ${JSON.stringify(file.split('\\').join('/'))};`).join('\n') +
+          `\nexport const layouts = { ${entries.map(([name], i) => `${JSON.stringify(name)}: L${i}`).join(', ')} };\n`
+        );
+      }
+      return null;
+    },
+    transformIndexHtml: {
+      order: 'pre',
+      async handler(html) {
+        const b = await ensure();
+        const redirect = localeRedirectScript(b.site);
+        // the chrome language rule (App's useChromeLocale): a stored language none of the site's locales has moves
+        // the chrome (bar, footer) to that language — hide it until the app has re-rendered it
+        // cross-site prerendering: every same-origin link except this site's own pages (its router serves those)
+        const init = createThemeInitScript({ chromeLocales: chromeOnlyLocales(b.site), speculation: { exclude: siteRoots(b.site).map((r) => r + '*') } });
+        const favicon = b.site.favicon ?? b.site.logo?.src;
+        const headExtra = (cfg.head ?? [])
+          .map(([tag, attrs, content]) => {
+            const a = Object.entries(attrs)
+              .map(([k, v]) => (v === true ? k : v === false ? '' : `${k}="${String(v).replace(/"/g, '&quot;')}"`))
+              .filter(Boolean)
+              .join(' ');
+            return ['meta', 'link', 'base'].includes(tag) ? `<${tag} ${a}>` : `<${tag}${a ? ' ' + a : ''}>${content ?? ''}</${tag}>`;
+          })
+          .join('\n    ');
+        const entryClient = '/' + relative(root, join(KIT_DOCS_APP_DIR, 'entry-client.tsx')).split('\\').join('/');
+        return html
+          .replace('src="./entry-client.tsx"', `src="${entryClient}"`)
+          .replace('<!--kit-theme-->', `<script>${init}</script>${redirect ? `\n    <script>${redirect}</script>` : ''}`)
+          .replace(
+            '<!--kit-fonts-->',
+            `<link rel="preconnect" href="https://fonts.googleapis.com">\n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n    <link rel="stylesheet" href="${GOOGLE_FONTS_HREF}">`,
+          )
+          .replace('<!--kit-favicon-->', favicon ? `<link rel="icon" href="${favicon}">` : '')
+          .replace('<!--kit-head-extra-->', headExtra);
+      },
+    },
+    configureServer(server: ViteDevServer) {
+      server.watcher.add(cfg.contentRoot);
+      const onChange = async (file: string) => {
+        if (!resolve(file).startsWith(cfg.contentRoot)) return;
+        await rebuild(new Set([resolve(file)]));
+        for (const id of [R_SITE, R_TOKENS]) {
+          const m = server.moduleGraph.getModuleById(id);
+          if (m) server.moduleGraph.invalidateModule(m);
+        }
+        for (const m of server.moduleGraph.idToModuleMap.values()) if (m.id?.startsWith(R_PAGE)) server.moduleGraph.invalidateModule(m);
+        server.ws.send({ type: 'full-reload' });
+      };
+      server.watcher.on('change', onChange);
+      server.watcher.on('add', onChange);
+      server.watcher.on('unlink', onChange);
+      const serveApp = async (res: import('node:http').ServerResponse) => {
+        const template = readFileSync(appHtml, 'utf8');
+        // Transform as if requested at the template's own location so ./entry-client.tsx resolves.
+        const html = await server.transformIndexHtml('/' + relative(root, appHtml).split('\\').join('/'), template);
+        res.setHeader('content-type', 'text/html; charset=utf-8');
+        res.end(html);
+      };
+      // localeFirst: the locales' pages are outside Vite's base (/zh-Hans/<base>…): serve the app there before Vite
+      // answers them with its "did you mean <base>" page
+      if (cfg.localeFirst) {
+        server.middlewares.use(async (req, res, next) => {
+          const url = (req.url ?? '/').split('?')[0]!;
+          if ((req.method !== 'GET' && req.method !== 'HEAD') || url.startsWith(cfg.base) || (extname(url) && !url.endsWith('.html'))) return next();
+          if (sitePath(cfg, url) === null) return next();
+          await ensure();
+          await serveApp(res);
+        });
+      }
+      return () => {
+        server.middlewares.use(async (req, res, next) => {
+          // Vite's base middleware strips the base from req.url; use the original URL.
+          const url = ((req as { originalUrl?: string }).originalUrl ?? req.url ?? '/').split('?')[0]!;
+          if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+          if (!url.startsWith(cfg.base)) return next();
+          const rel = decodeURIComponent(url.slice(cfg.base.length));
+          await ensure();
+          for (const f of searchFiles.values()) {
+            if (f.file === rel) {
+              res.setHeader('content-type', 'application/json');
+              res.end(f.json);
+              return;
+            }
+          }
+          // content assets (MkDocs: images next to markdown)
+          if (rel && extname(rel) && !rel.endsWith('.html')) {
+            const p = join(cfg.contentRoot, rel);
+            if (existsSync(p) && statSync(p).isFile()) {
+              res.end(readFileSync(p));
+              return;
+            }
+            return next();
+          }
+          await serveApp(res);
+        });
+      };
+    },
+    generateBundle(_opts, bundle) {
+      if (isSsr || !built) return;
+      const b = built;
+      for (const f of searchFiles.values()) this.emitFile({ type: 'asset', fileName: f.file, source: f.json });
+      // (localeFirst: at the host root, written in writeBundle)
+      if (!cfg.localeFirst) this.emitFile({ type: 'asset', fileName: '.nojekyll', source: '' });
+      this.emitFile({ type: 'asset', fileName: '_kit/nav.json', source: JSON.stringify(navJson(b.site), null, 2) + '\n' });
+      this.emitFile({ type: 'asset', fileName: SEARCH_DOCS_FILE, source: JSON.stringify(searchDocsJson(b)) });
+      // moved pages: a redirect page at each old URL
+      // the route paths served under base (with localeFirst: the default locale's), relative to base
+      const routeFiles = new Set(
+        b.routes.map((r) => pathUrl(cfg, r.path)).filter((u) => u.startsWith(cfg.base)).map((u) => u.slice(cfg.base.length)),
+      );
+      const allRoutes = new Set(b.routes.map((r) => r.path));
+      const written = new Map<string, string>();
+      // localeFirst: a redirect of a localized path also answers at its language-first URL (outside base: written to
+      // the host root in writeBundle)
+      localizedRedirects = [];
+      const redirectPage = (fileName: string, to: string) => {
+        const url = /^[a-z]+:/i.test(to) ? to : `${cfg.hostname ?? ''}${pathUrl(cfg, to)}`;
+        const prev = written.get(fileName);
+        if (prev !== undefined && prev !== url) throw new Error(`redirects: ${cfg.base}${fileName} would redirect to ${prev} and to ${url}`);
+        if (prev !== undefined) return;
+        written.set(fileName, url);
+        this.emitFile({ type: 'asset', fileName, source: redirectHtml(url) });
+      };
+      for (const [from, to] of Object.entries(cfg.redirects ?? {})) {
+        const dir = from === '' || from.endsWith('/');
+        const fileName = dir ? `${from}index.html` : cfg.urlStyle === 'directory' ? `${from}/index.html` : `${from}.html`;
+        if (routeFiles.has(from) || routeFiles.has(dir ? from : `${from}.html`) || allRoutes.has(from) || (!dir && allRoutes.has(`${from}.html`))) {
+          throw new Error(`redirects: ${from} is a page of the site`);
+        }
+        redirectPage(fileName, to);
+        if (cfg.localeFirst && pathUrl(cfg, from) !== cfg.base + from) {
+          const html = redirectHtml(/^[a-z]+:/i.test(to) ? to : `${cfg.hostname ?? ''}${pathUrl(cfg, to)}`);
+          localizedRedirects.push({ file: pathUrl(cfg, fileName).slice(1), html });
+        }
+      }
+      // a locale's former URL prefixes (kit 2.21, LocaleConfig.formerPrefixes): each page also answers there.
+      // They are relative to base: with localeFirst (kit 2.23) no locale but the default one lives under base, so a
+      // locale's own prefix is a former one too (/<base>/zh-Hans/x/ → /zh-Hans/<base>/x/)
+      for (const loc of cfg.locales) {
+        for (const former of loc.formerPrefixes) {
+          if (!cfg.localeFirst) {
+            if (former === loc.prefix) continue;
+            if (cfg.locales.some((l) => l.prefix === former)) throw new Error(`i18n: former prefix '${former}' of '${loc.code}' is the prefix of a locale`);
+          } else if (former === '' || [...routeFiles].some((f) => f.startsWith(former))) {
+            throw new Error(`i18n: former prefix '${former}' of '${loc.code}' holds pages of the site`);
+          }
+          for (const r of b.routes) {
+            if (r.locale !== loc.code || !r.path.startsWith(loc.prefix)) continue;
+            const old = former + r.path.slice(loc.prefix.length);
+            const fileName = old.endsWith('/') ? `${old}index.html` : old.endsWith('.html') ? old : `${old}.html`;
+            redirectPage(fileName, r.path);
+          }
+        }
+      }
+      // page module → chunk (+ its static imports) for <link rel=modulepreload> during prerender
+      const pages: Record<string, string[]> = {};
+      for (const out of Object.values(bundle)) {
+        if (out.type === 'chunk' && out.facadeModuleId?.startsWith(R_PAGE)) {
+          pages[out.facadeModuleId.slice(R_PAGE.length)] = [out.fileName, ...out.imports];
+        }
+      }
+      mkdirSync(workDir, { recursive: true });
+      // outDir: where the prerender writes the pages (the host root with localeFirst); template: the client build's
+      // index.html (in base's folder)
+      const template = relative(cfg.outRoot, join(cfg.baseOutRoot, relative(root, appHtml))).split('\\').join('/');
+      writeFileSync(
+        join(workDir, 'client-pages.json'),
+        JSON.stringify({ pages, appHtml: relative(root, appHtml).split('\\').join('/'), outDir: cfg.outRoot, template }, null, 2),
+      );
+      // sitemap
+      if (cfg.sitemap && cfg.hostname) {
+        const urls = b.routes
+          .map((r) => {
+            const alts = Object.entries(r.alternates);
+            const links =
+              alts.length > 1
+                ? alts
+                    .map(([code, p]) => `    <xhtml:link rel="alternate" hreflang="${b.site.locales.find((l) => l.code === code)?.lang ?? code}" href="${cfg.hostname}${encodeURI(pathUrl(cfg, p))}"/>`)
+                    .join('\n') + '\n'
+                : '';
+            const lastmod = r.lastUpdated ? `    <lastmod>${new Date(r.lastUpdated).toISOString().slice(0, 10)}</lastmod>\n` : '';
+            return `  <url>\n    <loc>${cfg.hostname}${encodeURI(pathUrl(cfg, r.path))}</loc>\n${lastmod}${links}  </url>`;
+          })
+          .join('\n');
+        const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls}\n</urlset>\n`;
+        this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemap });
+        // MkDocs also published sitemap.xml.gz; keep that URL alive for crawlers that registered it
+        if (cfg.urlStyle === 'directory') this.emitFile({ type: 'asset', fileName: 'sitemap.xml.gz', source: gzipSync(sitemap, { level: 9 }) });
+      }
+    },
+    writeBundle(_opts, bundle) {
+      if (isSsr || !built) return;
+      const b = built;
+      // Readers without JavaScript get the dark theme when their system is dark (the theme class on <html> is
+      // set by the pre-paint script): the stylesheet's .dark rules as :root rules, loaded inside <noscript>
+      // with media="(prefers-color-scheme: dark)" — as on the kit's static pages (kit-nojs-dark.css).
+      const css = Object.values(bundle)
+        .filter((o) => o.type === 'asset' && o.fileName.endsWith('.css'))
+        .map((o) => (o.type === 'asset' ? String(o.source) : ''))
+        .join('\n');
+      if (cfg.localeFirst) {
+        mkdirSync(cfg.outRoot, { recursive: true });
+        writeFileSync(join(cfg.outRoot, '.nojekyll'), '');
+        for (const r of localizedRedirects) {
+          mkdirSync(dirname(join(cfg.outRoot, r.file)), { recursive: true });
+          writeFileSync(join(cfg.outRoot, r.file), r.html);
+        }
+      }
+      const tplFile = join(cfg.baseOutRoot, relative(root, appHtml));
+      if (css && existsSync(tplFile)) {
+        const dark = noJsDarkCss(css, { source: 'the levimc-kit docs build from the site stylesheet' });
+        const file = `assets/kit-nojs-dark.${hash8(dark)}.css`;
+        mkdirSync(join(cfg.baseOutRoot, 'assets'), { recursive: true });
+        writeFileSync(join(cfg.baseOutRoot, file), dark);
+        const tag = `<noscript><link rel="stylesheet" href="${cfg.base}${file}" media="(prefers-color-scheme: dark)"></noscript>`;
+        writeFileSync(tplFile, readFileSync(tplFile, 'utf8').replace('</head>', () => `  ${tag}\n  </head>`));
+      }
+      // MkDocs: every non-markdown file in the content dir is copied verbatim (logo.svg, favicon.ico, img/…)
+      if (cfg.copyContentAssets) {
+        for (const rel of b.scan.assets) {
+          const to = join(cfg.baseOutRoot, rel);
+          mkdirSync(dirname(to), { recursive: true });
+          copyFileSync(join(cfg.contentRoot, rel), to);
+        }
+      }
+      for (const a of b.assets.values()) {
+        const to = join(cfg.baseOutRoot, a.out);
+        mkdirSync(dirname(to), { recursive: true });
+        copyFileSync(a.abs, to);
+      }
+    },
+  };
+
+  const plugins: PluginOption[] = [plugin];
+  if (options.react !== false) plugins.push(react());
+  if (options.tailwind !== false) plugins.push(tailwindcss());
+  return plugins;
+}
+
+export { defineDocsConfig } from './config.ts';
+export type { DocsConfig } from './config.ts';

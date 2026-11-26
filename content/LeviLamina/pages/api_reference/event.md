@@ -1,0 +1,348 @@
+# Event
+
+`ll/api/event/` · **Common / Server / Client**
+
+## Overview
+
+The Event module provides a publish-subscribe event system. It includes a singleton event bus, typed listeners with priority control, cancellable events, and built-in events for player actions, world changes, entities, the server lifecycle, commands, and the client.
+
+## Headers
+
+| Header | Description |
+|--------|-------------|
+| `ll/api/event/EventBus.h` | Singleton event dispatcher |
+| `ll/api/event/Event.h` | Base event class |
+| `ll/api/event/EventId.h` | Event type identification |
+| `ll/api/event/Listener.h` | Typed event listener |
+| `ll/api/event/ListenerBase.h` | Base listener with priority |
+| `ll/api/event/Cancellable.h` | Cancellable event mixin |
+| `ll/api/event/Emitter.h` | Event emitter base |
+| `ll/api/event/DynamicListener.h` | Runtime listener creation |
+| `ll/api/event/MultiListener.h` | Listener for multiple event types |
+
+## Key Classes
+
+### EventBus
+
+Singleton event dispatcher that handles all event publishing and subscription.
+
+```cpp
+namespace ll::event {
+class EventBus {
+public:
+    static EventBus& getInstance();
+
+    // Publish an event
+    template <class T> void publish(T&& event);
+    template <class T> void publish(std::string_view modName, T&& event);
+
+    // Add/remove listeners
+    template <class T> bool addListener(std::shared_ptr<Listener<T>> const& listener);
+    bool removeListener(ListenerPtr const& listener);
+    template <class T> bool removeListener(ListenerPtr const& listener);
+
+    // Convenience: create and add in one call
+    template <class T, class L = Listener<T>, class... Args>
+    auto emplaceListener(Args&&... args);
+
+    // Query
+    template <class T> size_t getListenerCount();
+    bool hasEvent(EventIdView const& eventId) const;
+    bool hasListener(ListenerId id) const;
+    ListenerPtr getListener(ListenerId id) const;
+    bool removeListener(ListenerId id);
+
+    // Set emitter factory
+    template <class T> bool setEventEmitter(FactoryFn fn, std::weak_ptr<mod::Mod> mod);
+};
+}
+```
+
+### Event
+
+Abstract base class for all events.
+
+```cpp
+namespace ll::event {
+class Event {
+public:
+    virtual ~Event();
+    virtual void serialize(CompoundTag&) const;
+    virtual void deserialize(CompoundTag const&);
+    virtual EventId getId() const;
+};
+}
+```
+
+### Listener\<T\>
+
+Typed listener bound to a specific event type.
+
+```cpp
+namespace ll::event {
+template <class T>
+class Listener : public ListenerBase {
+public:
+    using event_type  = T;
+    using callback_fn = std::function<void(event_type&)>;
+
+    explicit Listener(callback_fn fn, EventPriority priority = EventPriority::Normal,
+                      std::weak_ptr<mod::Mod> mod = mod::NativeMod::current());
+
+    static std::shared_ptr<Listener> create(callback_fn fn, EventPriority priority = EventPriority::Normal,
+                                             std::weak_ptr<mod::Mod> mod = mod::NativeMod::current());
+};
+}
+```
+
+### EventPriority
+
+```cpp
+enum class EventPriority {
+    Highest = 0,
+    High    = 100,
+    Normal  = 200,
+    Low     = 300,
+    Lowest  = 400,
+};
+```
+
+### Cancellable\<T\>
+
+Mixin template that makes an event cancellable.
+
+```cpp
+namespace ll::event {
+template <class T>
+class Cancellable : public T {
+public:
+    bool isCancelled();
+    void setCancelled(bool cancelled);
+    void cancel();
+};
+}
+```
+
+## Built-in Events
+
+### Player Events `[Common]`
+
+| Event | Description | Cancellable |
+|-------|-------------|:-----------:|
+| `PlayerConnectEvent` | Player connects (before joining) | Yes |
+| `PlayerJoinEvent` | Player joins the server | Yes |
+| `PlayerDisconnectEvent` | Player disconnects | No |
+| `PlayerChatEvent` | Player sends a chat message | Yes |
+| `PlayerAttackEvent` | Player attacks an entity | Yes |
+| `PlayerDestroyBlockEvent` | Player destroys a block | Yes |
+| `PlayerPlacingBlockEvent` | Player is about to place a block | Yes |
+| `PlayerPlacedBlockEvent` | Player placed a block | No |
+| `PlayerInteractBlockEvent` | Player interacts with a block | Yes |
+| `PlayerUseItemEvent` | Player uses an item | Yes |
+| `PlayerSwingEvent` | Player swings arm | No |
+| `PlayerJumpEvent` | Player jumps | Yes |
+| `PlayerSneakingEvent` / `PlayerSneakedEvent` | Player starts/stops sneaking | Yes |
+| `PlayerSprintingEvent` / `PlayerSprintedEvent` | Player starts/stops sprinting | No |
+| `PlayerPickUpItemEvent` | Player picks up an item | Yes |
+| `PlayerRespawnEvent` | Player respawns | No |
+| `PlayerDieEvent` | Player dies | No |
+| `PlayerChangePermEvent` | Player permission level changes | Yes |
+| `PlayerAddExperienceEvent` | Player gains experience | Yes |
+
+### Entity Events `[Common]`
+
+| Event | Description | Cancellable |
+|-------|-------------|:-----------:|
+| `ActorHurtEvent` | An actor takes damage | Yes |
+| `MobDieEvent` | A mob dies | No |
+
+### World Events `[Common]`
+
+| Event | Description | Cancellable |
+|-------|-------------|:-----------:|
+| `ServerLevelTickEvent` | Each server level tick | No |
+| `SpawningMobEvent` | A mob is about to spawn | Yes |
+| `SpawnedMobEvent` | A mob spawned | No |
+| `BlockChangedEvent` | A block changes | No |
+| `FireSpreadEvent` | Fire spreads | Yes |
+
+### Server Events `[Common]`
+
+| Event | Description | Cancellable |
+|-------|-------------|:-----------:|
+| `ServerStartedEvent` | Server has started | No |
+| `ServerStoppingEvent` | Server is stopping | No |
+
+### Command Events `[Common]`
+
+| Event | Description | Cancellable |
+|-------|-------------|:-----------:|
+| `ExecutingCommandEvent` | A command is about to be executed | Yes |
+| `ExecutedCommandEvent` | A command was executed | No |
+| `ServerCommandRegisterEvent` | Server commands are being registered | No |
+
+### IO Events `[Common]`
+
+| Event | Description | Cancellable |
+|-------|-------------|:-----------:|
+| `ConsoleOutputtingEvent` | Console output is about to be written | Yes |
+| `ConsoleOutputtedEvent` | Console output was written | No |
+
+### Service Events `[Common]`
+
+| Event | Description | Cancellable |
+|-------|-------------|:-----------:|
+| `ServiceRegisterEvent` | A service is registered | No |
+| `ServiceUnregisterEvent` | A service is unregistered | No |
+
+### Client Events `[Client Only]`
+
+| Event | Description | Cancellable |
+|-------|-------------|:-----------:|
+| `ClientJoinLevelEvent` | Client joins a level | No |
+| `ClientExitLevelEvent` | Client exits a level | No |
+| `ClientStartJoinLevelEvent` | Client starts joining a level | No |
+| `ClientCancelJoinLevelEvent` | Client cancels level join | No |
+| `ClientLevelTickEvent` | Each client level tick | No |
+| `ClientCommandRegisterEvent` | Client commands are being registered | No |
+| `KeyInputEvent` | Keyboard input | Yes |
+| `MouseInputEvent` | Mouse input | Yes |
+| `BeforeUIRenderEvent` | Before UI rendering | Yes |
+| `AfterUIRenderEvent` | After UI rendering | No |
+
+## Usage
+
+### Listening to an Event
+
+```cpp
+#include "ll/api/event/EventBus.h"
+#include "ll/api/event/player/PlayerJoinEvent.h"
+
+void setupListeners() {
+    auto& bus = ll::event::EventBus::getInstance();
+
+    auto listener = bus.emplaceListener<ll::event::PlayerJoinEvent>(
+        [](ll::event::PlayerJoinEvent& event) {
+            // Handle player join
+        }
+    );
+}
+```
+
+### Listening with Priority
+
+```cpp
+#include "ll/api/event/EventBus.h"
+#include "ll/api/event/player/PlayerChatEvent.h"
+
+void setupPriorityListener() {
+    auto& bus = ll::event::EventBus::getInstance();
+
+    bus.emplaceListener<ll::event::PlayerChatEvent>(
+        [](ll::event::PlayerChatEvent& event) {
+            // This runs before Normal priority listeners
+        },
+        ll::event::EventPriority::High
+    );
+}
+```
+
+### Cancelling an Event
+
+```cpp
+#include "ll/api/event/EventBus.h"
+#include "ll/api/event/player/PlayerChatEvent.h"
+
+void blockBadWords() {
+    auto& bus = ll::event::EventBus::getInstance();
+
+    bus.emplaceListener<ll::event::PlayerChatEvent>(
+        [](ll::event::PlayerChatEvent& event) {
+            // Cancel the event to prevent the chat message
+            event.cancel();
+        }
+    );
+}
+```
+
+### Removing a Listener
+
+```cpp
+#include "ll/api/event/EventBus.h"
+#include "ll/api/event/server/ServerStartedEvent.h"
+
+void setupAndRemove() {
+    auto& bus = ll::event::EventBus::getInstance();
+
+    auto listener = bus.emplaceListener<ll::event::ServerStartedEvent>(
+        [](ll::event::ServerStartedEvent&) {
+            // One-time setup
+        }
+    );
+
+    // Later, remove the listener
+    bus.removeListener(listener);
+}
+```
+
+### Publishing a Custom Event
+
+```cpp
+#include "ll/api/event/Event.h"
+#include "ll/api/event/EventBus.h"
+
+// 1. Define the event (must be final)
+class MyCustomEvent final : public ll::event::Event {
+    std::string mData;
+public:
+    MyCustomEvent(std::string data) : mData(std::move(data)) {}
+    std::string const& data() const { return mData; }
+};
+
+// 2. Publish it
+void fireEvent() {
+    MyCustomEvent event{"hello"};
+    ll::event::EventBus::getInstance().publish(event);
+}
+
+// 3. Listen to it
+void listenCustom() {
+    ll::event::EventBus::getInstance().emplaceListener<MyCustomEvent>(
+        [](MyCustomEvent& event) {
+            // event.data() == "hello"
+        }
+    );
+}
+```
+
+### MultiListener
+
+Listen to multiple event types with a single callback:
+
+```cpp
+#include "ll/api/event/MultiListener.h"
+#include "ll/api/event/player/PlayerJoinEvent.h"
+#include "ll/api/event/player/PlayerDisconnectEvent.h"
+
+void setupMulti() {
+    auto listener = ll::event::MultiListener<
+        ll::event::PlayerJoinEvent,
+        ll::event::PlayerDisconnectEvent
+    >::create([](auto&& event) {
+        // Called for both join and disconnect
+    });
+
+    ll::event::EventBus::getInstance().addListener(listener);
+}
+```
+
+## Platform Notes
+
+- **Server events** (`ServerStartedEvent`, `ServerStoppingEvent`): Available in both server and client builds, but fire only on the server side.
+- **Client events** (`ClientJoinLevelEvent`, `KeyInputEvent`, `MouseInputEvent`, render events): Available only in client builds (`src-client/ll/api/event/`).
+
+## Related
+
+- [How-to Guide: Events](../developer_guides/how_to_guides/event_guide.md) — Step-by-step tutorial
+- [Input (Client)](input.md) — Client-only input event details
+- [Service](service.md) — Service registration and unregistration events

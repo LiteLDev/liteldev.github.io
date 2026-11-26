@@ -1,0 +1,26 @@
+// One program for the whole site: the kit (design system and docs engine), levimc.org itself, LeviMC Mods, the docs
+// sites' configs and the build scripts' TypeScript.
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src", "content/*/*.ts"],
+  "exclude": [
+    "node_modules", "dist", ".kit", ".build", ".cache",
+    // the globals of the kit's vanilla runtime (kit.src.js): for tsconfig.scripts.json only
+    "src/kit/static/kit.src.globals.d.ts"
+  ]
+}

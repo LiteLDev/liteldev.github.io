@@ -1,0 +1,274 @@
+# Architecture
+
+This document outlines LeviLamina's project structure, design principles, and architectural decisions.
+
+## Project Structure
+
+### Top-Level Directories
+
+```
+LeviLamina/
+├── src/              # Common + Server code
+├── src-client/       # Client-specific code
+├── src-server/       # Server-specific code
+├── src-test/         # Test code
+├── docs/             # Documentation
+├── scripts/          # Build and utility scripts
+├── builder/          # Header generation scripts
+└── bin/              # Build output
+```
+
+### Source Directory Organization
+
+#### `src/` — Common + Server
+
+Contains code shared between the server and client, as well as server-only implementations:
+
+```
+src/
+├── ll/
+│   ├── api/          # Public API (174 headers)
+│   │   ├── base/     # Foundation types
+│   │   ├── command/  # Command system
+│   │   ├── event/    # Event system
+│   │   ├── form/     # UI forms
+│   │   ├── mod/      # Mod management
+│   │   ├── service/  # Service registry
+│   │   └── ...       # Other modules
+│   └── core/         # Internal implementation (62 files)
+│       ├── mod/      # Mod loading
+│       ├── command/  # Built-in commands
+│       ├── form/     # Form handlers
+│       └── tweak/    # Game tweaks
+└── mc/               # Bedrock headers
+    ├── server/
+    ├── world/
+    ├── network/
+    └── ...
+```
+
+#### `src-client/` — Client-Only
+
+Client-specific extensions and overrides (42 files):
+
+```
+src-client/
+├── ll/
+│   ├── api/
+│   │   ├── input/
+│   │   │   ├── KeyRegistry.h  # Input binding
+│   │   │   └── KeyHandle.h
+│   │   └── event/
+│   │       ├── input/         # Input events
+│   │       ├── render/        # Render events
+│   │       └── client/        # Client lifecycle
+│   └── core/
+│       └── (6 files)          # Client implementations
+└── mc/
+    └── client/                # Client-specific BDS headers
+```
+
+#### `src-server/` — Server-Only
+
+Server-specific extensions (18 files):
+
+```
+src-server/
+├── ll/
+│   ├── api/
+│   │   ├── event/server/      # Server events
+│   │   └── service/           # Server services
+│   └── core/
+│       └── (13 files)         # Server implementations
+└── mc/
+    └── server/                # Server-specific BDS headers
+```
+
+## Layered Architecture
+
+### Layer 1: `mc/` — Bedrock Engine Headers
+
+- **Purpose**: Provides C++ interfaces to game internals
+- **Scope**: Read-only; not modified by LeviLamina
+
+**Key Namespaces:**
+- `::Actor`, `::Player`, `::Mob` — Entity system
+- `::Level`, `::Dimension`, `::BlockSource` — World management
+- `::ServerInstance`, `::Minecraft` — Server lifecycle
+- `::CommandRegistry`, `::Command` — Command system
+- `::Packet`, `::NetworkIdentifier` — Networking
+
+### Layer 2: `ll/core/` — Internal Implementation
+
+- **Purpose**: Implements LeviLamina's core functionality
+- **Visibility**: Internal; not exposed to mods
+- **Dependencies**: Uses `mc/` headers and `ll/api/`
+
+**Key Components:**
+- **ModRegistrar** — Mod lifecycle management
+- **NativeModManager** — DLL loading
+- **Built-in Commands** — `/version`, `/ll`, `/tpdim`, `/crash`
+- **CrashLogger** — Exception handling and Sentry integration
+- **Tweaks** — Game modifications (vulnerability fixes, memory allocator, etc.)
+
+### Layer 3: `ll/api/` — Public API
+
+- **Purpose**: Stable API for mod developers
+- **Visibility**: Exported via `LLAPI`/`LLNDAPI` macros
+- **Versioning**: Semantic versioning with compatibility guarantees
+
+**Design Principles:**
+- **Type-safe**: Extensive use of C++20 concepts and type traits
+- **Error handling**: `Expected<T>` for recoverable errors
+- **Async support**: Coroutines and executors
+- **Reflection**: Compile-time reflection for serialization
+- **Event-driven**: Publish-subscribe event system
+
+## Module Dependencies
+
+```
+┌─────────────────────────────────────────┐
+│           Mod Code (User)               │
+└─────────────────┬───────────────────────┘
+                  │ uses
+┌─────────────────▼───────────────────────┐
+│          ll/api (Public API)            │
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│
+│  │ Command  │  │  Event   │  │  Form  ││
+│  └──────────┘  └──────────┘  └────────┘│
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│
+│  │   Mod    │  │ Service  │  │ Memory ││
+│  └──────────┘  └──────────┘  └────────┘│
+└─────────────────┬───────────────────────┘
+                  │ implements
+┌─────────────────▼───────────────────────┐
+│        ll/core (Implementation)         │
+│  ┌──────────────┐  ┌──────────────────┐ │
+│  │ ModRegistrar │  │ NativeModManager │ │
+│  └──────────────┘  └──────────────────┘ │
+│  ┌──────────────┐  ┌──────────────────┐ │
+│  │ CrashLogger  │  │  Built-in Cmds   │ │
+│  └──────────────┘  └──────────────────┘ │
+└─────────────────┬───────────────────────┘
+                  │ uses
+┌─────────────────▼───────────────────────┐
+│      mc/ (Bedrock Engine Headers)      │
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│
+│  │  Player  │  │  Level   │  │ Packet ││
+│  └──────────┘  └──────────┘  └────────┘│
+│  ┌──────────┐  ┌──────────┐  ┌────────┐│
+│  │ Command  │  │ Server   │  │ Network││
+│  └──────────┘  └──────────┘  └────────┘│
+└─────────────────────────────────────────┘
+```
+
+## Server vs Client Builds
+
+### Build Configuration
+
+Controlled by `--target_type` in XMake:
+
+```lua
+-- xmake.lua
+option("target_type")
+    set_default("server")
+    set_values("server", "client")
+```
+
+### Compilation Differences
+
+| Aspect           | Server Build              | Client Build              |
+| ---------------- | ------------------------- | ------------------------- |
+| **Source Files** | `src/` + `src-server/`    | `src/` + `src-client/`    |
+| **MC Headers**   | `bedrockdata:server`      | `bedrockdata:client`      |
+| **Entry Point**  | `DllMain` (server)        | `DllMain` (client)        |
+| **API Surface**  | Common + Server           | Common + Client           |
+| **Output**       | `LeviLamina.dll` (server) | `LeviLamina.dll` (client) |
+
+### API Availability
+
+| Module                      | Server | Client | Notes                              |
+| --------------------------- | :----: | :----: | ---------------------------------- |
+| Base                        |   ✅    |   ✅    | Common                             |
+| Command                     |   ✅    |   ✅    | Common                             |
+| Event (Player/World)        |   ✅    |   ✅    | Common                             |
+| Event (Server)              |   ✅    |   ✅    | Common (on the client: local worlds) |
+| Event (Client/Input/Render) |   ❌    |   ✅    | Client-only                        |
+| Form                        |   ✅    |   ✅    | Common                             |
+| Input                       |   ❌    |   ✅    | Client-only                        |
+| Service (Bedrock)           |   ✅    |   ✅    | Common (different implementations) |
+
+### Runtime Behavior
+
+**Server:**
+- Loaded by PreLoader into the dedicated server
+- Hooks server initialization
+- Provides server-side events and services
+
+**Client:**
+- Loaded by PreLoader into the game client
+- Hooks client initialization
+- Provides client-side input, rendering, and UI
+
+## Design Patterns
+
+### Singleton Pattern
+
+Used for global registries:
+- `EventBus::getInstance()`
+- `CommandRegistrar::getInstance(bool isClientSide)`
+- `ServiceManager::getInstance()`
+- `ModManagerRegistry::getInstance()`
+
+### Factory Pattern
+
+Used for dynamic object creation:
+- `PacketRegistrar` — Packet factories
+- `EventBus::setEventEmitter()` — Event emitter factories
+
+### Observer Pattern
+
+Implemented via the event system:
+- `EventBus` — Subject
+- `Listener` — Observer
+- `Event` — Notification
+
+### Dependency Injection
+
+Implemented via the service system:
+- `ServiceManager` — Container
+- `Service` — Injectable component
+- `subscribeService()` — Dependency resolution
+
+## Memory Management
+
+### Allocation Strategy
+
+- **mimalloc** — Default allocator for performance
+- **Smart pointers** — `std::shared_ptr` and `std::unique_ptr` for ownership
+- **optional_ref** — Non-owning references to Bedrock objects
+
+### Hook Management
+
+- **HookRegistrar** — Automatic hook registration and cleanup
+- **Priority system** — Controls hook execution order
+
+## Thread Safety
+
+### Thread Model
+
+- **Server thread** — Main game loop (single-threaded)
+- **Thread pool** — Background tasks
+- **Network threads** — Packet handling
+
+### Synchronization
+
+- **ServerThreadExecutor** — Executes on the server thread
+- **ThreadPoolExecutor** — Executes on background threads
+- **Atomic operations** — Lock-free where possible
+- **Mutexes** — Protect shared state
+
+## Related
+
+- [Build Guide](https://github.com/LiteLDev/LeviLamina/blob/main/docs/contributing/building.md) — Building from source
+- [API Reference](../api_reference/index.md) — Complete API documentation

@@ -1,0 +1,1694 @@
+/* levimc.org — Tailwind v4 + levimc-kit ("Impression, Craft"). The kit owns tokens, fonts and the pixel /
+   painterly vocabulary; this file only lays out the site's pages with those tokens. No new colours or fonts. */
+@import "../kit/theme/tailwind.css";
+/* the themed 404 card comes from the kit's docs layout */
+@import "../kit/docs/app/docs.css";
+/* the site-wide search dialog */
+@import "../kit/theme/search.css";
+@source "./";
+
+@layer components {
+  /* ================================================================== layout */
+  .lm-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+  .lm-container-mid {
+    max-width: 74rem;
+  }
+  .lm-container-narrow {
+    max-width: 62rem;
+  }
+  @media (max-width: 640px) {
+    .lm-container {
+      padding-inline: 1rem;
+    }
+  }
+  .lm-section {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+  }
+  .lm-section + .lm-section {
+    padding-top: 0;
+  }
+  .lm-page {
+    padding-top: clamp(2.5rem, 6vw, 4.5rem);
+  }
+  .lm-grid-2,
+  .lm-grid-3,
+  .lm-grid-4 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .lm-grid-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 720px) {
+    .lm-grid-2,
+    .lm-grid-3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1080px) {
+    .lm-grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .lm-grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* ================================================================== type */
+  .lm-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0 0 1rem;
+    color: var(--color-primary-strong);
+  }
+  .dark .lm-eyebrow {
+    color: var(--color-primary);
+  }
+  .lm-eyebrow-cjk {
+    font-size: 0.875rem;
+    font-weight: 650;
+    letter-spacing: 0.14em;
+  }
+  .lm-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 1.3rem + 3.2vw, 4rem);
+    font-weight: 750;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+  .lm-title-sm {
+    font-size: clamp(1.625rem, 1.3rem + 1.2vw, 2.25rem);
+  }
+  .lm-lead {
+    max-width: 42rem;
+    margin: 1.25rem 0 0;
+    font-size: 1.1875rem;
+    line-height: 1.65;
+    color: var(--color-muted);
+    text-wrap: pretty;
+  }
+  .lm-gradient-text {
+    background: linear-gradient(115deg, var(--color-primary-strong) 10%, var(--color-accent-1) 95%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  .dark .lm-gradient-text {
+    background-image: linear-gradient(115deg, var(--color-primary) 10%, var(--color-mc-diamond) 60%, var(--color-accent-4) 100%);
+  }
+
+  .lm-page-head {
+    max-width: 48rem;
+    margin-bottom: 2.75rem;
+  }
+  .lm-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 2.5rem;
+  }
+  .lm-split-head {
+    display: grid;
+    gap: 1.25rem 4rem;
+    margin-bottom: 2.75rem;
+  }
+  @media (min-width: 1024px) {
+    .lm-split-head {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: end;
+    }
+  }
+  .lm-split-lead {
+    margin: 0;
+  }
+  .lm-view-all {
+    margin-bottom: 0.25rem;
+  }
+
+  /* ================================================================== hero */
+  .lm-hero .kit-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+  .lm-hero .kit-hero-tagline {
+    max-width: min(36rem, 100%);
+  }
+  @media (min-width: 961px) {
+    /* Keep the copy on calm canvas: the painting starts just past the copy column's right edge (its pixel
+       dissolve then runs over the gap). The column sits in the kit's centred 80rem container with 1.5rem padding. */
+    .lm-hero {
+      --lm-copy-w: min(37rem, 52vw);
+      --lm-copy-end: calc(max(0px, (100% - 80rem) / 2) + 1.5rem + var(--lm-copy-w));
+      --kit-hero-paint-x: calc(var(--lm-copy-end) + 1.5rem);
+    }
+    .lm-hero .kit-hero-copy {
+      max-width: var(--lm-copy-w);
+    }
+  }
+  .lm-hero-strong {
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .lm-hero-lang {
+    font-weight: 600;
+    color: var(--color-primary-strong);
+  }
+  .dark .lm-hero-lang {
+    color: var(--color-primary);
+  }
+  /* "I want to…": players, server owners and developers, all three at once (src/main/components/Roles.tsx).
+     Rows under hairlines, one text action each: no filled button, so that no row shouts over the others. The row's
+     title is what the eye lands on; the arrow link is the one thing to do next, and the whole row is its target. */
+  .lm-roles {
+    width: 100%;
+    margin-top: 2rem;
+  }
+  .lm-roles-label {
+    margin: 0 0 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+  .lm-paths {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lm-path {
+    position: relative;
+    display: flex;
+    gap: 0.875rem;
+    padding: 1rem 0.75rem 1rem 0.5rem;
+    margin-inline: -0.5rem;
+    border-top: 1px solid var(--color-line);
+    /* a link to a row (#host) stops below the sticky LeviMC bar */
+    scroll-margin-top: 5rem;
+    transition: background-color 0.12s;
+  }
+  .lm-path:first-child {
+    border-top-color: transparent;
+  }
+  .lm-path:hover,
+  .lm-path:focus-within {
+    background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+  }
+  .lm-path-icon {
+    flex: none;
+    margin-top: 0.125rem;
+    color: var(--color-muted);
+    transition: color 0.12s;
+  }
+  .lm-path:hover .lm-path-icon,
+  .lm-path:focus-within .lm-path-icon,
+  .lm-path[data-current] .lm-path-icon {
+    color: var(--color-primary-strong);
+  }
+  .dark .lm-path:hover .lm-path-icon,
+  .dark .lm-path:focus-within .lm-path-icon,
+  .dark .lm-path[data-current] .lm-path-icon {
+    color: var(--color-primary);
+  }
+  .lm-path-body {
+    min-width: 0;
+  }
+  .lm-path-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--color-ink);
+  }
+  .lm-path-desc {
+    margin: 0.25rem 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+    text-wrap: pretty;
+  }
+  .lm-path-action {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.875rem;
+    margin: 0.5rem 0 0;
+  }
+  .lm-path-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-primary-strong);
+  }
+  .dark .lm-path-go {
+    color: var(--color-primary);
+  }
+  /* the whole row is the link */
+  .lm-path-go::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .lm-path-go:focus-visible {
+    outline: none;
+  }
+  .lm-path:has(.lm-path-go:focus-visible) {
+    outline: var(--px) solid var(--color-focus);
+    outline-offset: -1px;
+  }
+  .lm-path-go .px-icon,
+  .lm-path-go svg {
+    transition: transform 0.12s;
+  }
+  .lm-path:hover .lm-path-go svg {
+    transform: translateX(3px);
+  }
+  .lm-path:hover .lm-path-go {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .lm-path-platforms {
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+  /* where else a row leads: smaller and muted, above the row's link target so they can be clicked themselves */
+  .lm-path-more {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1.125rem;
+    width: fit-content;
+    margin: 0.5rem 0 0;
+    font-size: 0.8125rem;
+  }
+  .lm-path-more a {
+    color: var(--color-muted);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 3px;
+  }
+  .lm-path-more a:hover {
+    color: var(--color-ink);
+    text-decoration-color: currentColor;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lm-path,
+    .lm-path-icon,
+    .lm-path-go svg {
+      transition: none;
+    }
+  }
+
+  /* what the selected role gets beside the copy: LeviLauncher, a terminal, or a code sample */
+  .lm-showcase {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    max-width: 34rem;
+    margin-top: 3rem;
+  }
+  .lm-showcase-window {
+    --px-drop: var(--shadow-float);
+    padding: 0.625rem;
+  }
+  .lm-showcase-window .kit-tabs {
+    margin: 0;
+  }
+  .lm-showcase-window .kit-tabs-bar {
+    margin: var(--px) var(--px) 0;
+  }
+  .lm-showcase-window .kit-tab-panel:focus-visible {
+    outline-offset: 2px;
+  }
+  .lm-launcher {
+    padding: 1.5rem;
+  }
+  .lm-launcher-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .lm-launcher-name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--color-ink);
+  }
+  .lm-launcher-platforms {
+    margin: 0.125rem 0 0;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+  .lm-launcher-features {
+    display: grid;
+    gap: 1rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lm-launcher-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+  .lm-launcher-features svg {
+    flex: none;
+  }
+  .lm-launcher-features strong {
+    display: block;
+    font-weight: 650;
+    color: var(--color-ink);
+  }
+  .lm-term-prompt {
+    color: var(--color-primary-strong);
+    user-select: none;
+  }
+  .dark .lm-term-prompt {
+    color: var(--color-primary);
+  }
+  .lm-code-block.kit-code {
+    margin: 0.625rem var(--px) var(--px);
+  }
+  .lm-code-block pre {
+    min-height: calc(10 * 1.7 * 0.8125rem + 1.75rem);
+  }
+  /* token roles → the kit Shiki palette (set once on .lm-code-block by CodeCard) */
+  .lm-tok-comment {
+    --shiki-light: var(--lm-tok-comment-light);
+    --shiki-dark: var(--lm-tok-comment-dark);
+    font-style: italic;
+  }
+  .lm-tok-keyword {
+    --shiki-light: var(--lm-tok-keyword-light);
+    --shiki-dark: var(--lm-tok-keyword-dark);
+  }
+  .lm-tok-type {
+    --shiki-light: var(--lm-tok-type-light);
+    --shiki-dark: var(--lm-tok-type-dark);
+  }
+  .lm-tok-func {
+    --shiki-light: var(--lm-tok-func-light);
+    --shiki-dark: var(--lm-tok-func-dark);
+  }
+  .lm-tok-string {
+    --shiki-light: var(--lm-tok-string-light);
+    --shiki-dark: var(--lm-tok-string-dark);
+  }
+  .lm-tok-param {
+    --shiki-light: var(--lm-tok-param-light);
+    --shiki-dark: var(--lm-tok-param-dark);
+  }
+  .lm-tok-punct {
+    --shiki-light: var(--lm-tok-punct-light);
+    --shiki-dark: var(--lm-tok-punct-dark);
+  }
+  @media (min-width: 1200px) {
+    /* the hero's aside column (PaintedHero aside): beside the copy, sitting low in the hero (as before the
+       kit slot) so the painting's focal point above it — the bridge by day, the rising sun at night — stays clear */
+    .lm-hero .kit-hero-aside {
+      align-self: end;
+      margin-bottom: 1.5rem;
+    }
+    .lm-showcase {
+      margin: 0;
+    }
+  }
+
+  /* ================================================================== project & feature grid */
+  /* Frameless items under a hairline: the grid reads as one calm sheet instead of a wall of boxes. */
+  .lm-grid-4:has(> .lm-project, > .lm-feature) {
+    gap: 3rem 2.5rem;
+  }
+  .lm-project,
+  .lm-feature {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--color-line-strong);
+  }
+  .lm-project-icon {
+    margin-bottom: 1.25rem;
+  }
+  /* the project's logo: a small framed painting, square-cornered like every kit slot */
+  .lm-project-logo {
+    display: block;
+    width: 3.5rem;
+    height: 3.5rem;
+    background: color-mix(in srgb, var(--color-ink) 5%, transparent);
+    box-shadow: 0 0 0 1px var(--color-line);
+  }
+  .lm-project-name {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: 1.3125rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    overflow-wrap: anywhere;
+  }
+  .lm-project-desc {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-muted);
+  }
+  .lm-project .lm-project-desc {
+    flex-grow: 1;
+  }
+  .lm-project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    margin: 1rem 0 0;
+    font-size: 0.875rem;
+    color: var(--color-faint);
+  }
+  /* The name is the card's link; its ::after stretches over the whole card, so anywhere on it opens the project */
+  .lm-project {
+    position: relative;
+  }
+  .lm-project-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: inherit;
+    text-decoration: none;
+  }
+  .lm-project-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .lm-project-link > svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    color: var(--color-link);
+    transition: transform 0.15s steps(2, end);
+  }
+  .lm-project:hover .lm-project-link {
+    color: var(--color-link);
+  }
+  .lm-project:hover .lm-project-link > svg {
+    transform: translateX(3px);
+  }
+  .lm-project-link:focus-visible {
+    outline: none;
+  }
+  .lm-project:has(.lm-project-link:focus-visible) {
+    outline: var(--px) solid var(--color-focus);
+    outline-offset: 0.5rem;
+  }
+
+  /* ================================================================== community */
+  .lm-join {
+    text-align: center;
+  }
+  .lm-join-head .lm-lead {
+    margin-inline: auto;
+  }
+  .lm-join-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    max-width: 56rem;
+    margin: 3.5rem auto 0;
+    text-align: left;
+  }
+  @media (min-width: 720px) {
+    .lm-join-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1080px) {
+    .lm-join-grid-3 {
+      max-width: 72rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .lm-join-foot {
+    margin-top: 2.25rem;
+  }
+
+  .lm-accent-discord {
+    --lm-accent: var(--color-mc-enchant);
+  }
+  .lm-accent-telegram {
+    --lm-accent: var(--color-accent-1);
+  }
+  .lm-accent-github {
+    --lm-accent: var(--color-ink);
+  }
+  .lm-accent-qq {
+    --lm-accent: var(--color-mc-redstone);
+  }
+  .lm-community-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 1.75rem;
+    color: var(--color-ink);
+  }
+  .lm-community-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .kit-slot.lm-brand-slot,
+  .dark .kit-slot.lm-brand-slot {
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: none;
+    color: var(--lm-accent);
+    background: color-mix(in srgb, var(--lm-accent) 12%, transparent);
+  }
+  .lm-community-heading {
+    min-width: 0;
+  }
+  .lm-community-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+  .lm-community-sub {
+    margin-top: 0.125rem;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+  .lm-community-desc {
+    flex-grow: 1;
+    margin: 0 0 1.25rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-muted);
+  }
+  .lm-community-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-link);
+  }
+  .lm-community-cta svg {
+    transition: transform 0.15s steps(2, end);
+  }
+  a:hover > .lm-community-cta svg {
+    transform: translateX(3px);
+  }
+  .lm-qq-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .lm-qq-group {
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+
+  /* ================================================================== about */
+  .lm-story-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* One story per row (title column + body): the three stories differ in length by up to 4×, so side-by-side
+     cards would leave a viewport-tall empty column next to the long one. */
+  @media (min-width: 1024px) {
+    .lm-story {
+      display: grid;
+      grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
+      gap: 0 3.5rem;
+    }
+    /* the title follows the reader down a long story */
+    .lm-story-lead {
+      position: sticky;
+      top: calc(var(--spacing-globalbar) + 1.5rem);
+      align-self: start;
+    }
+    .lm-story .lm-story-title {
+      margin-bottom: 0;
+    }
+    .lm-story .lm-story-body {
+      padding-top: 0.25rem;
+    }
+  }
+  /* frameless chapters under a hairline, like the home grids */
+  .lm-story {
+    min-width: 0;
+    padding: clamp(2.5rem, 5vw, 3.75rem) 0;
+    border-top: 1px solid var(--color-line-strong);
+  }
+  .lm-story:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .lm-story-meta {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0;
+    color: var(--color-primary-strong);
+  }
+  .dark .lm-story-meta {
+    color: var(--color-primary);
+  }
+  .lm-story-number {
+    color: var(--color-faint);
+  }
+  .lm-story-title {
+    margin: 1.25rem 0 1rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 1.25rem + 1.2vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+    text-wrap: balance;
+  }
+  .lm-story-body {
+    max-width: 74ch;
+    margin: 0;
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: color-mix(in srgb, var(--color-ink) 80%, var(--color-muted));
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+  .lm-team {
+    margin-top: clamp(3rem, 6vw, 4.5rem);
+    padding-top: clamp(2.5rem, 5vw, 3.75rem);
+    border-top: 1px solid var(--color-line-strong);
+  }
+  .lm-team-head {
+    margin-bottom: 1.75rem;
+  }
+  .lm-team-head .lm-lead {
+    margin-top: 0.5rem;
+  }
+  .lm-team .lm-grid-3 {
+    gap: 0 2.5rem;
+  }
+  .lm-member {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 1.5rem 0 1.75rem;
+    border-top: 1px solid var(--color-line);
+  }
+  .lm-member-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .lm-avatar {
+    flex: none;
+    width: 3rem;
+    height: 3rem;
+    overflow: hidden;
+    background: var(--color-surface-3);
+  }
+  .lm-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .lm-member-id {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .lm-member-name {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+  .lm-member-role {
+    margin: 0.125rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--color-muted);
+  }
+  .lm-member-bio {
+    flex-grow: 1;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--color-muted);
+  }
+  .lm-member-link {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-link);
+  }
+  .lm-member-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  /* ================================================================== support */
+  .lm-support-ways {
+    margin-bottom: clamp(3.5rem, 7vw, 5rem);
+  }
+  .lm-way {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    padding: clamp(1.5rem, 3vw, 2rem);
+  }
+  .lm-way-slot {
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .lm-way-title {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.25rem + 0.8vw, 1.875rem);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .lm-way-desc {
+    margin: 0 0 1.5rem;
+    line-height: 1.65;
+    color: var(--color-muted);
+  }
+  .lm-way-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: auto;
+  }
+  .lm-channels {
+    width: 100%;
+    margin-top: auto;
+  }
+  .lm-channels-label {
+    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .lm-channels-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    gap: 0.75rem;
+  }
+  .lm-channel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .lm-donors-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 2rem;
+    margin-bottom: 1.75rem;
+  }
+  .lm-donors-desc {
+    max-width: 36rem;
+    margin: 0;
+    font-size: 1rem;
+  }
+  /* supporters: a quiet frameless list (name — amount, an optional note) under hairlines */
+  .lm-donor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: 0 2.5rem;
+  }
+  .lm-donor {
+    min-width: 0;
+    padding: 1rem 0 1.125rem;
+    border-top: 1px solid var(--color-line);
+  }
+  .lm-donor-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .lm-donor-name {
+    min-width: 0;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
+  .lm-donor-name a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--color-line-strong);
+    text-underline-offset: 0.2em;
+  }
+  .lm-donor-name a:hover {
+    color: var(--color-link);
+    text-decoration-color: currentColor;
+  }
+  .lm-donor-amount {
+    flex: none;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-faint);
+  }
+  .lm-donor-date {
+    margin: 0.125rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--color-faint);
+  }
+  .lm-donor-message {
+    margin: 0.375rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--color-muted);
+    overflow-wrap: anywhere;
+  }
+  .lm-donors-empty {
+    padding: 2.5rem;
+    text-align: center;
+    color: var(--color-muted);
+  }
+  .lm-donors-empty-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  /* ================================================================== blog (/blog/) */
+  .lm-blog-body {
+    padding-bottom: clamp(3.5rem, 7vw, 5.5rem);
+  }
+  /* the index's painted hero, compact: a header band, not a landing page */
+  .lm-blog-hero {
+    --kit-hero-band: clamp(8.5rem, 34vw, 12rem);
+  }
+  .lm-blog-hero .kit-hero-inner {
+    min-height: 0;
+    padding-top: clamp(2.75rem, 5vw, 4.25rem);
+    padding-bottom: clamp(3.25rem, 5.5vw, 4.75rem);
+  }
+  .lm-blog-hero .kit-hero-name {
+    font-size: clamp(2.5rem, 1.6rem + 3.4vw, 4rem);
+  }
+  @media (max-width: 960px) {
+    .lm-blog-hero .kit-hero-inner {
+      padding-top: calc(var(--kit-hero-band) - 1.5rem);
+      padding-bottom: 3rem;
+    }
+  }
+  .lm-blog-nav {
+    position: relative;
+    margin: 0 0 2.25rem;
+    padding: 2px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .lm-blog-hero + .lm-blog-body .lm-blog-nav {
+    margin-top: 1.75rem;
+  }
+  /* one row; on phones it scrolls sideways instead of squeezing the slots */
+  .lm-blog-nav .hotbar {
+    flex-wrap: nowrap;
+    width: max-content;
+    max-width: none;
+  }
+  .lm-blog-nav .hotbar > a {
+    flex: none;
+    white-space: nowrap;
+  }
+  /* scroll cue while the row continues past an edge (set by BlogNav) */
+  .lm-blog-nav[data-fade] {
+    --lm-fade: 2.5rem;
+    -webkit-mask-image: var(--lm-fade-mask);
+    mask-image: var(--lm-fade-mask);
+  }
+  .lm-blog-nav[data-fade='end'] {
+    --lm-fade-mask: linear-gradient(90deg, #000 calc(100% - var(--lm-fade)), transparent);
+  }
+  .lm-blog-nav[data-fade='start'] {
+    --lm-fade-mask: linear-gradient(90deg, transparent, #000 var(--lm-fade));
+  }
+  .lm-blog-nav[data-fade='both'] {
+    --lm-fade-mask: linear-gradient(90deg, transparent, #000 var(--lm-fade), #000 calc(100% - var(--lm-fade)), transparent);
+  }
+  .lm-blog-head {
+    margin-bottom: 1.75rem;
+  }
+  .lm-blog-head .lm-eyebrow a {
+    color: inherit;
+  }
+  .lm-blog-head .lm-eyebrow a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  /* index: posts + sidebar */
+  .lm-blog-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+  @media (min-width: 1024px) {
+    .lm-blog-layout {
+      grid-template-columns: minmax(0, 1fr) 18.5rem;
+      gap: 3rem;
+      align-items: start;
+    }
+  }
+  .lm-blog-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0 0 1.25rem;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .lm-blog-list {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .lm-blog-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  }
+  .lm-blog-card-cat {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-primary-strong);
+  }
+  .lm-blog-card-cat::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: var(--color-primary);
+    box-shadow: 2px 2px 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent);
+  }
+  .dark .lm-blog-card-cat {
+    color: var(--color-primary);
+  }
+  .lm-blog-card-cat:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  .lm-blog-card-title {
+    margin: 0;
+    font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+    font-weight: 650;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .lm-blog-card-title a {
+    color: var(--color-ink);
+    text-decoration: none;
+    background: linear-gradient(currentColor, currentColor) 0 100% / 0 2px no-repeat;
+    transition:
+      background-size 0.2s steps(4, end),
+      color 0.12s;
+  }
+  .lm-blog-card-title a:hover {
+    color: var(--color-link);
+    background-size: 100% 2px;
+  }
+  /* the whole card is the post's link target; the inner links stay above it */
+  .lm-blog-card-title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .lm-blog-card :is(.lm-blog-card-cat, .lm-blog-author, .lm-blog-chip, .lm-blog-more) {
+    position: relative;
+    z-index: 1;
+  }
+  .lm-blog-excerpt {
+    margin: 0;
+    font-size: 0.9688rem;
+    line-height: 1.75;
+    color: var(--color-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .lm-blog-card-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-top: 0.25rem;
+    padding-top: 0.875rem;
+    border-top: 1px dashed var(--color-line-strong);
+  }
+  .lm-blog-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-link);
+  }
+  .lm-blog-more svg {
+    transition: transform 0.15s steps(2, end);
+  }
+  .lm-blog-card:hover .lm-blog-more svg {
+    transform: translateX(3px);
+  }
+
+  /* author · date · reading time */
+  .lm-blog-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem 1.125rem;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+  .lm-blog-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .lm-blog-author {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  a.lm-blog-author:hover > span {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .lm-blog-avatar {
+    --px-border: color-mix(in srgb, var(--color-ink) 25%, var(--color-surface-2));
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    margin: 2px;
+    object-fit: cover;
+    background: var(--color-surface-3);
+    box-shadow:
+      0 -2px 0 0 var(--px-border),
+      0 2px 0 0 var(--px-border),
+      -2px 0 0 0 var(--px-border),
+      2px 0 0 0 var(--px-border);
+  }
+
+  /* tag / category chips */
+  .lm-blog-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lm-blog-chip {
+    --px-border: color-mix(in srgb, var(--color-pond) 38%, var(--color-line));
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 2px;
+    padding: 0.1875rem 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: color-mix(in srgb, var(--color-pond) 80%, var(--color-ink));
+    background: color-mix(in srgb, var(--color-pond) 9%, var(--color-surface));
+    box-shadow:
+      0 -2px 0 0 var(--px-border),
+      0 2px 0 0 var(--px-border),
+      -2px 0 0 0 var(--px-border),
+      2px 0 0 0 var(--px-border);
+    transition:
+      background-color 0.12s,
+      color 0.12s;
+  }
+  .lm-blog-chip svg {
+    width: 12px;
+    height: 12px;
+    opacity: 0.75;
+  }
+  .lm-blog-chip.is-category {
+    --px-border: color-mix(in srgb, var(--color-primary) 45%, var(--color-line));
+    color: var(--color-primary-strong);
+    background: var(--color-primary-soft);
+  }
+  .lm-blog-chip:hover {
+    color: var(--color-ink);
+    background: color-mix(in srgb, var(--color-pond) 18%, var(--color-surface));
+  }
+  .dark .lm-blog-chip {
+    --px-border: color-mix(in srgb, var(--color-harbor) 55%, var(--color-line));
+    color: color-mix(in srgb, var(--color-mc-diamond) 55%, var(--color-ink));
+    background: color-mix(in srgb, var(--color-harbor) 16%, var(--color-surface));
+  }
+  .dark .lm-blog-chip.is-category {
+    color: var(--color-primary);
+  }
+  .lm-blog-count {
+    display: inline-block;
+    min-width: 1.5rem;
+    padding: 0 0.375rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.5rem;
+    text-align: center;
+    color: var(--color-muted);
+    background: color-mix(in srgb, var(--color-ink) 7%, transparent);
+  }
+  .lm-blog-chip .lm-blog-count {
+    min-width: 0;
+    padding: 0 0 0 0.25rem;
+    line-height: inherit;
+    background: none;
+  }
+
+  /* sidebar */
+  .lm-blog-side {
+    display: grid;
+    gap: 1.25rem;
+  }
+  @media (min-width: 1024px) {
+    .lm-blog-side {
+      position: sticky;
+      top: calc(var(--spacing-globalbar) + 1.5rem);
+      margin-top: 3.125rem;
+    }
+  }
+  .lm-blog-side-card {
+    padding: 1.125rem 1.25rem 1.25rem;
+  }
+  .lm-blog-side-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+  }
+  .lm-blog-terms {
+    display: grid;
+    gap: 0.125rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lm-blog-term {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.375rem 0.5rem;
+    margin-inline: -0.5rem;
+    font-size: 0.9375rem;
+    color: var(--color-ink);
+  }
+  .lm-blog-term:hover {
+    color: var(--color-link);
+    background: color-mix(in srgb, var(--color-ink) 5%, transparent);
+  }
+  .lm-blog-terms-card {
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+  .lm-blog-terms-card .lm-blog-chip {
+    font-size: 0.9375rem;
+    padding: 0.375rem 0.75rem;
+  }
+  .lm-blog-terms-card .lm-blog-terms {
+    max-width: 36rem;
+  }
+  .lm-blog-terms-card .lm-blog-term {
+    margin: 0;
+    padding: 0.625rem 0.75rem;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  /* archives / tag / category: a Hexo-style timeline */
+  .lm-blog-timeline {
+    display: grid;
+    gap: 2.25rem;
+    max-width: 52rem;
+  }
+  .lm-blog-year-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 0.75rem;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .lm-blog-year-title a {
+    color: var(--color-ink);
+  }
+  .lm-blog-year-title::after {
+    content: "";
+    flex: 1;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--color-line-strong) 0 6px, transparent 6px 10px);
+  }
+  .lm-blog-month {
+    padding-left: 1.25rem;
+    box-shadow: inset 2px 0 0 0 var(--color-line);
+  }
+  .lm-blog-month + .lm-blog-month {
+    margin-top: 1rem;
+  }
+  .lm-blog-month-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 650;
+    color: var(--color-muted);
+  }
+  .lm-blog-month-title a {
+    color: inherit;
+  }
+  .lm-blog-rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lm-blog-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.625rem 0;
+    border-bottom: 1px dashed var(--color-line);
+  }
+  .lm-blog-row::before {
+    content: "";
+    position: absolute;
+    left: calc(-1.25rem - 2px);
+    top: 1.05rem;
+    width: 6px;
+    height: 6px;
+    background: var(--color-primary);
+  }
+  .lm-blog-row-date {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+  .lm-blog-row-title {
+    font-weight: 600;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+  .lm-blog-row-title:hover {
+    color: var(--color-link);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .lm-blog-row-author {
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+  @media (max-width: 560px) {
+    .lm-blog-row {
+      grid-template-columns: 3.25rem minmax(0, 1fr);
+    }
+    .lm-blog-row-author {
+      grid-column: 2;
+    }
+  }
+
+  /* a post: header, prose canvas, prev/next, comments; its contents beside it on wide screens */
+  .lm-blog-post-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: center;
+    gap: 3rem;
+  }
+  @media (min-width: 1200px) {
+    .lm-blog-post-grid {
+      grid-template-columns: minmax(0, 48rem) 14rem;
+    }
+  }
+  .lm-blog-post {
+    width: 100%;
+    max-width: 48rem;
+    min-width: 0;
+    margin-inline: auto;
+  }
+  .lm-blog-post-head {
+    display: grid;
+    gap: 0.875rem;
+  }
+  .lm-blog-crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+  .lm-blog-crumbs a {
+    color: var(--color-primary-strong);
+  }
+  .dark .lm-blog-crumbs a {
+    color: var(--color-primary);
+  }
+  .lm-blog-crumbs a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  /* while a page's chunk loads after a link (rare: they are fetched when idle after load) */
+  .lm-route-loading {
+    min-height: 60vh;
+  }
+
+  /* the 404: the docs' card, wide enough for the projects grid under its actions (as the docs' 404) */
+  .lm-notfound .kit-notfound-card {
+    width: min(46rem, 100%);
+    max-width: none;
+  }
+  .lm-notfound .lm-notfound-pick {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  /* the docs' h1 scale (src/kit/theme/prose.css .kit-prose h1), so a post reads like a docs page */
+  .lm-blog-post-title {
+    font-size: clamp(2rem, 1.6rem + 1.4vw, 2.625rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .lm-blog-post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .lm-blog-rule {
+    margin: 1.75rem 0 2.25rem;
+  }
+  .lm-blog-prose img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin-inline: auto;
+    background: #fff;
+  }
+  .lm-blog-loading {
+    min-height: 40vh;
+  }
+  .lm-blog-pager {
+    margin-top: 3rem;
+  }
+  .lm-blog-post-side {
+    display: none;
+  }
+  @media (min-width: 1200px) {
+    .lm-blog-post-side {
+      display: block;
+    }
+    .lm-blog-toc {
+      position: sticky;
+      top: calc(var(--spacing-globalbar) + 2rem);
+      max-height: calc(100dvh - var(--spacing-globalbar) - 4rem);
+      overflow: auto;
+      margin-top: 9.5rem;
+    }
+  }
+  .lm-blog-page {
+    max-width: 48rem;
+  }
+  .lm-blog-page-card {
+    padding: clamp(1.5rem, 3.5vw, 2.25rem);
+  }
+
+  /* comments (Waline, themed with the kit's tokens: square pixel corners, canvas colours) */
+  .lm-blog-comments {
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-line);
+  }
+  .lm-blog-comments-status {
+    color: var(--color-muted);
+  }
+  .lm-waline {
+    --waline-font-size: 0.9375rem;
+    --waline-theme-color: var(--color-primary-strong);
+    --waline-active-color: var(--color-primary);
+    --waline-color: var(--color-ink);
+    --waline-bg-color: var(--color-surface);
+    --waline-bg-color-light: var(--color-surface-2);
+    --waline-bg-color-hover: var(--color-surface-3);
+    --waline-border-color: var(--color-line-strong);
+    --waline-disable-bg-color: var(--color-surface-2);
+    --waline-disable-color: var(--color-faint);
+    --waline-code-bg-color: var(--color-code-bg);
+    --waline-bq-color: var(--color-line);
+    --waline-avatar-size: 2.75rem;
+    --waline-m-avatar-size: 2.25rem;
+    --waline-badge-color: var(--color-pond);
+    --waline-info-bg-color: var(--color-surface-2);
+    --waline-info-color: var(--color-muted);
+    --waline-light-grey: var(--color-muted);
+    --waline-dark-grey: var(--color-ink);
+    --waline-border: 2px solid var(--waline-border-color);
+    --waline-avatar-radius: 0;
+    --waline-box-shadow: none;
+    font-family: var(--font-sans);
+  }
+  .dark .lm-waline {
+    --waline-theme-color: var(--color-primary);
+    --waline-active-color: var(--color-primary-strong);
+  }
+  .lm-waline :is(.wl-panel, .wl-btn, .wl-card .wl-quote, .wl-input, .wl-editor, .wl-sort li, .wl-badge, .wl-gallery, .wl-emoji-popup, .wl-gif-popup, .wl-tab) {
+    border-radius: 0 !important;
+  }
+  /* Waline's stylesheet is not in a cascade layer, so these few overrides need !important */
+  .lm-waline .wl-panel {
+    margin: 0 0 1.5rem !important;
+    box-shadow: none !important;
+  }
+  /* one heading: the section's own "Comments" (Waline's "N Comments" would repeat it) */
+  .lm-waline .wl-meta-head .wl-count {
+    display: none !important;
+  }
+  .lm-waline .wl-meta-head {
+    justify-content: flex-end !important;
+  }
+  /* buttons: the kit's MC bevel buttons (.mc-btn / .mc-btn-primary), drawn with the same stepped frame */
+  .lm-waline .wl-btn {
+    --mc-btn-bg: #ebe5d6;
+    --mc-btn-bg-hover: #f3eee2;
+    --mc-btn-ink: var(--color-ink);
+    --px-border: #2a343c;
+    --px-bevel: inset 0 var(--px) 0 0 rgb(255 255 255 / 0.75), inset 0 calc(var(--px) * -2) 0 0 rgb(60 48 30 / 0.16);
+    margin: var(--px) calc(var(--px) * 2) var(--px) var(--px) !important;
+    padding: 0.375rem 0.875rem 0.5rem !important;
+    border: 0 !important;
+    font-weight: 600 !important;
+    color: var(--mc-btn-ink) !important;
+    background: var(--mc-btn-bg) !important;
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--px-border),
+      0 var(--px) 0 0 var(--px-border),
+      calc(var(--px) * -1) 0 0 0 var(--px-border),
+      var(--px) 0 0 0 var(--px-border),
+      var(--px-bevel) !important;
+    transition: background-color 0.15s var(--ease-soft), transform 0.06s linear !important;
+  }
+  .lm-waline .wl-btn:hover {
+    background: var(--mc-btn-bg-hover) !important;
+  }
+  .lm-waline .wl-btn:active {
+    transform: translateY(var(--px));
+    --px-bevel: inset 0 var(--px) 0 0 rgb(60 48 30 / 0.18);
+  }
+  .lm-waline .wl-btn:focus-visible {
+    outline: var(--px) solid var(--color-focus) !important;
+    outline-offset: calc(var(--px) * 2);
+  }
+  .lm-waline .wl-btn:disabled {
+    opacity: 0.55;
+    transform: none;
+  }
+  .dark .lm-waline .wl-btn {
+    --mc-btn-bg: #22384c;
+    --mc-btn-bg-hover: #2a4560;
+  }
+  .lm-waline .wl-btn.primary {
+    --mc-btn-bg: var(--color-primary-strong);
+    --mc-btn-bg-hover: #43804f;
+    --mc-btn-ink: var(--color-on-primary);
+    --px-border: #183520;
+    --px-bevel: inset 0 var(--px) 0 0 rgb(255 255 255 / 0.28), inset 0 calc(var(--px) * -2) 0 0 rgb(0 0 0 / 0.24);
+    text-shadow: 0 1px 0 rgb(0 0 0 / 0.18);
+  }
+  /* sort: hotbar slots (.hotbar), the selected order in the bright frame */
+  .lm-waline .wl-sort {
+    display: inline-flex !important;
+    gap: var(--px);
+    margin: var(--px) !important;
+    padding: var(--px) !important;
+    list-style: none;
+    background: color-mix(in srgb, var(--color-ink) 7%, var(--color-surface-2));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 color-mix(in srgb, var(--color-ink) 30%, var(--color-line-strong)),
+      0 var(--px) 0 0 color-mix(in srgb, var(--color-ink) 30%, var(--color-line-strong)),
+      calc(var(--px) * -1) 0 0 0 color-mix(in srgb, var(--color-ink) 30%, var(--color-line-strong)),
+      var(--px) 0 0 0 color-mix(in srgb, var(--color-ink) 30%, var(--color-line-strong));
+  }
+  .lm-waline .wl-sort li {
+    margin: 0 !important;
+    padding: 0.25rem 0.625rem !important;
+    font-size: 0.8125rem !important;
+    color: color-mix(in srgb, var(--color-ink) 72%, var(--color-muted)) !important;
+  }
+  .lm-waline .wl-sort li:hover {
+    color: var(--color-ink) !important;
+    background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  }
+  .lm-waline .wl-sort li.active {
+    font-weight: 600;
+    color: var(--color-ink) !important;
+    background: var(--color-surface);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--color-ink),
+      0 var(--px) 0 0 var(--color-ink),
+      calc(var(--px) * -1) 0 0 0 var(--color-ink),
+      var(--px) 0 0 0 var(--color-ink);
+  }
+}
+
+/* ================================================================== LeviChan peeking from behind the hero card
+   Only the top of her head shows over the card's top edge (the card sits in front); hovering raises her a little.
+   The 3D space itself (src/levichan/) and its styles load only when it is opened. */
+.lc-peek-anchor {
+  position: relative;
+  /* as wide as the card, so she peeks over the card's corner at every width; the card's top margin collapses
+     through this box, so its top edge is the card's */
+  width: 100%;
+  min-width: 0;
+  max-width: 34rem;
+}
+.lc-peek {
+  position: absolute;
+  z-index: 0;
+  right: 1.75rem;
+  top: 0;
+  width: 3.25rem;
+}
+.lc-peek-anchor > .lm-showcase {
+  z-index: 1;
+}
+.lc-peek-head {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 3.25rem;
+  height: 1.05rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: height 0.35s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.lc-peek-head img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3.25rem;
+  height: 3.25rem;
+  pointer-events: none;
+  user-select: none;
+}
+.lc-peek-head:hover,
+.lc-peek-head:focus-visible,
+.lc-peek[data-busy] .lc-peek-head {
+  height: 2.35rem;
+}
+.lc-peek[data-busy] .lc-peek-head {
+  cursor: progress;
+}
+/* no hover on a touch screen: show more of her, so there is something to tap */
+@media (hover: none) {
+  .lc-peek-head {
+    height: 1.7rem;
+  }
+}
+.lc-peek-head:focus-visible {
+  outline: 2px solid var(--color-accent, currentColor);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lc-peek-head {
+    transition: none;
+  }
+}

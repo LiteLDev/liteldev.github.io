@@ -1,0 +1,44 @@
+import { PROJECTS, projectHome } from '../../kit/components';
+import { useI18n } from '../i18n';
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  /** The project's logo (the kit's registry), shown at the top of its card. */
+  logo: string;
+  tags: string[];
+  /** Home page: the LeviMC Mods page of an official mod, else the docs, else the repository. */
+  link: string;
+}
+
+/** Card tag of each project (the kit's project registry holds names, links and icons). */
+const TAGS: Record<string, string> = {
+  LeviLamina: 'Mod Loader',
+  LegacyScriptEngine: 'Script Engine',
+  LeviStone: 'Plugin Runtime',
+  lip: 'Server Manager',
+  LeviLauncher: 'Windows · Android',
+  BeDD: 'Testing',
+  LeviOptimize: 'Performance',
+  LeviAntiCheat: 'Security',
+  MoreDimensions: 'Library',
+  bedboo: 'Bot Library',
+};
+
+/**
+ * Every LeviMC project (the kit's registry, in the order of the bar's Projects menu) with this site's
+ * descriptions (translated, never replaced by the repositories' English GitHub descriptions). A hook, so translations
+ * are read inside it.
+ */
+export function useProjects(): Project[] {
+  const { t } = useI18n();
+  return PROJECTS.map((p) => ({
+    id: p.id.toLowerCase(),
+    name: p.name,
+    description: t.projects_desc[p.id.toLowerCase() as keyof typeof t.projects_desc],
+    logo: p.logo,
+    tags: [TAGS[p.id] ?? ''],
+    link: projectHome(p),
+  }));
+}

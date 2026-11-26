@@ -1,0 +1,150 @@
+// levimc.org/LegacyScriptEngine/: the LegacyScriptEngine documentation, built with levimc-kit by levimc.org's deploy
+// (content/README.md). Imported from LiteLDev/LegacyScriptEngine (develop), where it was ported 1:1 from the former
+// mkdocs.yml (MkDocs Material + mkdocs-static-i18n). English at /LegacyScriptEngine/, Simplified Chinese at
+// /zh-Hans/LegacyScriptEngine/ (sources stay x.zh.md), Traditional Chinese at /zh-Hant/LegacyScriptEngine/, converted
+// from it: levimc.org's one scheme, the language first (2026-11-16). The URLs before
+// (/LegacyScriptEngine/zh-Hans/…, /LegacyScriptEngine/zh/…, /LegacyScriptEngine/zh-Hant/…) redirect.
+import { defineDocsConfig } from '../../src/kit/docs/node/config.ts';
+
+export default defineDocsConfig({
+  base: '/LegacyScriptEngine/',
+  title: 'LegacyScriptEngine',
+  logo: 'img/logo.png',
+  favicon: 'img/logo.png',
+  project: 'LegacyScriptEngine',
+  repo: 'https://github.com/LiteLDev/LegacyScriptEngine',
+  // the sources live here now
+  editLink: 'https://github.com/LiteLDev/liteldev.github.io/edit/main/content/LegacyScriptEngine/pages/:path',
+  contentDir: 'pages',
+  hostname: 'https://levimc.org',
+  sitemap: { hostname: 'https://levimc.org' },
+  lastUpdated: true,
+  i18n: {
+    mode: 'suffix',
+    defaultLocale: 'en',
+    localeFirst: true,
+    locales: [
+      { code: 'en', label: 'English', lang: 'en', prefix: '' },
+      // Simplified Chinese (sources *.zh.md); the project published it at zh-Hans/ and before that at zh/
+      { code: 'zh', label: '简体中文', lang: 'zh-Hans', prefix: 'zh-Hans/', formerPrefixes: ['zh-Hans/', 'zh/'] },
+      // Traditional Chinese, generated from the zh pages (levimc-kit convertFrom)
+      { code: 'zh-Hant', label: '繁體中文', lang: 'zh-Hant', prefix: 'zh-Hant/', convertFrom: 'zh', formerPrefixes: ['zh-Hant/'] },
+    ],
+  },
+  urlStyle: 'directory',
+  slug: 'pymdownx',
+  markdown: { compat: 'python-markdown' },
+  // MkDocs Material lists h2–h6 in "Table of contents"; the API entries of File, Basic, Command, DataBase
+  // and LanguageSupport are h5 headings, so keep the full depth instead of the kit default [2, 4].
+  outline: [2, 6],
+  sidebar: 'tabs',
+  // The LeviMC navigation model (src/kit/README.md "Navigation model"): every top-level entry is a section with its
+  // sidebar tree, the same five on every project's docs, in this order: Overview (the home page: what LSE is, the
+  // engines and a minimal plugin; a link with no tree), Install (one page: the variants, lip and LeviLauncher), Guides (one task each, step by step), Concepts (how plugins,
+  // engines and the API work) and Reference (the API). Tutorials (installing LSE, your first plugin) live at
+  // https://levimc.org/tutorials/, the questions at https://levimc.org/faq/. The pages keep their URLs: Language
+  // Support explains the engines and is in Concepts, but stays at apis/LanguageSupport/. The Reference section has
+  // more than 24 links, so only the group holding the current page starts open.
+  nav: [
+    { Overview: 'index.md' },
+    // Install (kit 2.32): the second section on every project's docs, one page like Overview: what you need, how to
+    // install, check, update and get other versions.
+    { Install: 'install.md' },
+    {
+      Guides: [
+        'guides/events.md',
+        'guides/commands.md',
+        'guides/forms.md',
+        'guides/storing_data.md',
+        'guides/logging_and_timers.md',
+      ],
+    },
+    { Concepts: ['concepts/plugins.md', 'concepts/script_api.md', 'apis/LanguageSupport.md'] },
+    {
+      Reference: [
+        'apis/README.md',
+        {
+          DataAPI: [
+            'apis/DataAPI/ConfigFile.md',
+            'apis/DataAPI/DataBase.md',
+            'apis/DataAPI/Economy.md',
+            'apis/DataAPI/OtherData.md',
+            'apis/DataAPI/PlayerData.md',
+          ],
+        },
+        {
+          EventAPI: [
+            'apis/EventAPI/Listen.md',
+            'apis/EventAPI/BlockEvents.md',
+            'apis/EventAPI/EconomicEvents.md',
+            'apis/EventAPI/EntityEvents.md',
+            'apis/EventAPI/OtherEvents.md',
+            'apis/EventAPI/PlayerEvents.md',
+          ],
+        },
+        {
+          GameAPI: [
+            'apis/GameAPI/Basic.md',
+            'apis/GameAPI/Block.md',
+            'apis/GameAPI/BlockEntity.md',
+            'apis/GameAPI/Command.md',
+            'apis/GameAPI/Container.md',
+            'apis/GameAPI/Device.md',
+            'apis/GameAPI/Entity.md',
+            'apis/GameAPI/GameUtils.md',
+            'apis/GameAPI/Item.md',
+            'apis/GameAPI/Packet.md',
+            'apis/GameAPI/Particle.md',
+            'apis/GameAPI/Player.md',
+            'apis/GameAPI/ScoreBoard.md',
+            'apis/GameAPI/Server.md',
+          ],
+        },
+        { GuiAPI: ['apis/GuiAPI/Form.md', 'apis/GuiAPI/FormBuilder.md'] },
+        {
+          NbtAPI: [
+            'apis/NbtAPI/NBT.md',
+            'apis/NbtAPI/NBTCompound.md',
+            'apis/NbtAPI/NBTList.md',
+            'apis/NbtAPI/NBTValue.md',
+          ],
+        },
+        {
+          ScriptAPI: [
+            'apis/ScriptAPI/Logger.md',
+            'apis/ScriptAPI/ScriptHelp.md',
+            'apis/ScriptAPI/i18n.md',
+            'apis/ScriptAPI/Ll.md',
+            'apis/ScriptAPI/VanillaI18n.md',
+          ],
+        },
+        {
+          SystemAPI: [
+            'apis/SystemAPI/File.md',
+            'apis/SystemAPI/FileSystem.md',
+            'apis/SystemAPI/Network.md',
+            'apis/SystemAPI/SystemCall.md',
+            'apis/SystemAPI/SystemInfo.md',
+          ],
+        },
+      ],
+    },
+  ],
+  // The tutorial moved to levimc.org/tutorials/: every URL it had (English, zh-Hans/, the former zh/, zh-Hant/) goes to
+  // the tutorial in the matching language.
+  redirects: {
+    'tutorials/create_your_first_plugin/': 'https://levimc.org/tutorials/develop/first-script-plugin/',
+    'zh-Hans/tutorials/create_your_first_plugin/': 'https://levimc.org/zh-Hans/tutorials/develop/first-script-plugin/',
+    'zh/tutorials/create_your_first_plugin/': 'https://levimc.org/zh-Hans/tutorials/develop/first-script-plugin/',
+    'zh-Hant/tutorials/create_your_first_plugin/': 'https://levimc.org/zh-Hant/tutorials/develop/first-script-plugin/',
+    // The FAQ moved to levimc.org/faq/, with the questions of the other LeviMC projects.
+    'faq/': 'https://levimc.org/faq/scripts/lse/basics/',
+    'zh-Hans/faq/': 'https://levimc.org/zh-Hans/faq/scripts/lse/basics/',
+    'zh/faq/': 'https://levimc.org/zh-Hans/faq/scripts/lse/basics/',
+    'zh-Hant/faq/': 'https://levimc.org/zh-Hant/faq/scripts/lse/basics/',
+  },
+  // Section titles; the pages are titled by their H1 in each locale.
+  navTranslations: {
+    zh: { Overview: '概览', Install: '安装', Guides: '指南', Concepts: '概念', Reference: '参考' },
+  },
+});

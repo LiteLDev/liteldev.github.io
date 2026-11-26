@@ -1,0 +1,22 @@
+// The JavaScript of the repository (build scripts, tests, the docs sites' scripts, Doxygen's, the kit's vanilla
+// runtime), checked as it is written: without annotations, so parameters may be `any`; everything else as in
+// tsconfig.json. The TypeScript these files import is checked by tsconfig.json.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": false,
+    "useUnknownInCatchVariables": false
+  },
+  "include": [
+    "*.mjs", "scripts", "src/**/*.mjs", "src/**/*.js", "src/kit/static/kit.src.globals.d.ts",
+    "content/*/scripts", "content/*/test", "doxygen"
+  ],
+  "exclude": [
+    "node_modules", "dist", ".kit", ".build", ".cache",
+    // written by src/kit/static/build-static.mjs
+    "src/kit/static/kit.js", "src/kit/static/theme-init*.js"
+  ]
+}

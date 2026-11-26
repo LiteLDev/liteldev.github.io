@@ -1,0 +1,38 @@
+import { StrictMode } from 'react';
+import { createRoot, hydrateRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router';
+import { App, preloadRoute } from './App';
+import { canonicalPath } from './routes';
+import { isLocale } from './i18n/config';
+import { preloadBlogPath } from './blog/data';
+import './styles.css';
+
+// GitHub Pages serves the same file for /about/, /about/index.html and /about//: show the canonical URL
+// before hydrating, so the router renders the page that was prerendered into this file.
+const canonical = canonicalPath(window.location.pathname);
+if (canonical !== window.location.pathname) {
+  window.history.replaceState(window.history.state, '', canonical + window.location.search + window.location.hash);
+}
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Could not find root element to mount to');
+}
+
+// the language the page was prerendered in (404.html is English for every unknown URL, see I18nProvider)
+const prerendered = document.documentElement.lang;
+const app = (
+  <StrictMode>
+    <BrowserRouter>
+      <App initialLocale={isLocale(prerendered) ? prerendered : undefined} />
+    </BrowserRouter>
+  </StrictMode>
+);
+
+// Production pages are prerendered (hydrate them); the dev server serves an empty #root. The page's chunk (all
+// pages but the home, see App) and a blog post's markdown are chunks of their own: load them first, so the first
+// render matches the prerendered HTML (prerender.mjs modulepreloads both beside the entry script).
+void Promise.allSettled([preloadRoute(canonical), preloadBlogPath(canonical)]).finally(() => {
+  if (rootElement.firstElementChild) hydrateRoot(rootElement, app);
+  else createRoot(rootElement).render(app);
+});

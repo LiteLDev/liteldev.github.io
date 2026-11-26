@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="944" height="612" viewBox="0 0 944 612" role="img" font-family="ui-monospace,'Cascadia Mono','Cascadia Code',Consolas,'SF Mono',Menlo,'DejaVu Sans Mono','Liberation Mono','Noto Sans Mono CJK SC','Sarasa Mono SC','Microsoft YaHei UI','PingFang SC','Noto Sans CJK SC',monospace" font-size="15">
+<title>lip</title>
+<rect x="10" y="10" width="924" height="490" rx="10" fill="#1a1d24"/>
+<path d="M10 40V20a10 10 0 0 1 10 -10H924a10 10 0 0 1 10 10V40z" fill="#272b35"/>
+<circle cx="28" cy="25" r="5.5" fill="#ff5f57"/>
+<circle cx="46" cy="25" r="5.5" fill="#febc2e"/>
+<circle cx="64" cy="25" r="5.5" fill="#28c840"/>
+<text x="472" y="29.5" text-anchor="middle" font-size="13" fill="#9aa3b5">lip</text>
+<rect x="10.5" y="10.5" width="923" height="489" rx="9.5" fill="none" stroke="#3d4454"/>
+<g shape-rendering="crispEdges">
+<rect x="706" y="168" width="9" height="20" fill="#d8dee9"/>
+<rect x="31" y="208" width="162" height="20" fill="#4a5364"/>
+</g>
+<g fill="none" stroke-width="1.25" shape-rendering="crispEdges">
+<path stroke="#8b95a7" d="M25.88 78H198.13M220 138H904M310 158H895M346 278H895M382 398H895M220 418H904M25.88 458H198.13M26.5 77.38V458.63M197.5 77.38V458.63"/>
+<path stroke="#56c8d8" d="M205.88 78H220M355 78H918.13M205.88 458H918.13M206.5 77.38V458.63M917.5 77.38V458.63"/>
+</g>
+<g fill="#d8dee9">
+<text x="31" y="62.5" textLength="90" lengthAdjust="spacingAndGlyphs" font-weight="700">lip 0.41.0</text>
+<text x="134.5" y="62.5" text-anchor="middle" fill="#8b95a7">·</text>
+<text x="148" y="62.5" textLength="198" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">D:\projects\WelcomeMod</text>
+<text x="229" y="82.5" textLength="117" lengthAdjust="spacingAndGlyphs" fill="#56c8d8" font-weight="700">Develop Tools</text>
+<text x="40" y="102.5" textLength="36" lengthAdjust="spacingAndGlyphs">Home</text>
+<text x="220" y="102.5" textLength="135" lengthAdjust="spacingAndGlyphs" font-weight="700">Create lip.toml</text>
+<text x="373" y="102.5" textLength="279" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">D:\projects\WelcomeMod\lip.toml</text>
+<text x="40" y="122.5" textLength="54" lengthAdjust="spacingAndGlyphs">Server</text>
+<text x="224.5" y="122.5" text-anchor="middle" fill="#9ad17b">✓</text>
+<text x="238" y="122.5" textLength="189" lengthAdjust="spacingAndGlyphs" fill="#9ad17b">Every value is valid.</text>
+<text x="40" y="142.5" textLength="36" lengthAdjust="spacingAndGlyphs">Mods</text>
+<text x="40" y="162.5" textLength="99" lengthAdjust="spacingAndGlyphs">Marketplace</text>
+<text x="238" y="162.5" textLength="63" lengthAdjust="spacingAndGlyphs" fill="#56c8d8" font-weight="700">Package</text>
+<text x="40" y="182.5" textLength="99" lengthAdjust="spacingAndGlyphs">Game Config</text>
+<text x="220" y="182.5" textLength="9" lengthAdjust="spacingAndGlyphs" fill="#56c8d8" font-weight="700">&gt;</text>
+<text x="238" y="182.5" textLength="90" lengthAdjust="spacingAndGlyphs" font-weight="700">Package id</text>
+<text x="463" y="182.5" textLength="243" lengthAdjust="spacingAndGlyphs">github.com/steve/WelcomeMod</text>
+<text x="890.5" y="182.5" text-anchor="middle" fill="#9ad17b">✓</text>
+<text x="40" y="202.5" textLength="90" lengthAdjust="spacingAndGlyphs">Mod Config</text>
+<text x="463" y="202.5" textLength="369" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">A Go module path, usually the repository:</text>
+<text x="40" y="222.5" textLength="117" lengthAdjust="spacingAndGlyphs" fill="#ffffff">Develop Tools</text>
+<text x="463" y="222.5" textLength="198" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">github.com/owner/repo.</text>
+<text x="40" y="242.5" textLength="72" lengthAdjust="spacingAndGlyphs">Settings</text>
+<text x="238" y="242.5" textLength="63" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">Version</text>
+<text x="463" y="242.5" textLength="45" lengthAdjust="spacingAndGlyphs">0.1.0</text>
+<text x="890.5" y="242.5" text-anchor="middle" fill="#9ad17b">✓</text>
+<text x="238" y="282.5" textLength="99" lengthAdjust="spacingAndGlyphs" fill="#56c8d8" font-weight="700">Information</text>
+<text x="238" y="302.5" textLength="36" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">Name</text>
+<text x="238" y="322.5" textLength="99" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">Description</text>
+<text x="238" y="342.5" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">Logo URL</text>
+<text x="463" y="342.5" textLength="72" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">https://</text>
+<text x="238" y="362.5" textLength="36" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">Tags</text>
+<text x="463" y="362.5" textLength="45" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">+ Add</text>
+<text x="238" y="402.5" textLength="135" lengthAdjust="spacingAndGlyphs" fill="#56c8d8" font-weight="700">Default variant</text>
+<text x="899.5" y="402.5" text-anchor="middle" fill="#8b95a7">▼</text>
+<text x="238" y="442.5" textLength="72" lengthAdjust="spacingAndGlyphs" font-weight="700">[ Save ]</text>
+<text x="319" y="442.5" textLength="90" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
+<text x="35.5" y="482.5" text-anchor="middle" font-weight="700">↑</text>
+<text x="44.5" y="482.5" text-anchor="middle" font-weight="700">↓</text>
+<text x="49" y="482.5" textLength="36" lengthAdjust="spacingAndGlyphs" font-weight="700">/Tab</text>
+<text x="94" y="482.5" textLength="36" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">Move</text>
+<text x="148" y="482.5" textLength="54" lengthAdjust="spacingAndGlyphs" font-weight="700">Ctrl+S</text>
+<text x="211" y="482.5" textLength="36" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">Save</text>
+<text x="265" y="482.5" textLength="27" lengthAdjust="spacingAndGlyphs" font-weight="700">Esc</text>
+<text x="301" y="482.5" textLength="45" lengthAdjust="spacingAndGlyphs" fill="#8b95a7">Close</text>
+</g>
+<circle cx="449" cy="178" r="10" fill="#ffa94d" stroke="#1a1d24" stroke-width="1.5"/>
+<text x="449" y="182.5" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1d24">1</text>
+<circle cx="224" cy="118" r="10" fill="#ffa94d" stroke="#1a1d24" stroke-width="1.5"/>
+<text x="224" y="122.5" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1d24">2</text>
+<rect x="10.5" y="510.5" width="923" height="91" rx="9.5" fill="#272b35" stroke="#3d4454"/>
+<circle cx="32" cy="529" r="10" fill="#ffa94d" stroke="#1a1d24" stroke-width="1.5"/>
+<text x="32" y="533.5" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1d24">1</text>
+<text x="52" y="533.5" textLength="288.6" lengthAdjust="spacingAndGlyphs" font-size="13" fill="#d8dee9">Each value is checked as it is typed:</text>
+<text x="352.3" y="533.5" text-anchor="middle" font-size="13" fill="#d8dee9">✓</text>
+<text x="364" y="533.5" textLength="46.8" lengthAdjust="spacingAndGlyphs" font-size="13" fill="#d8dee9">valid,</text>
+<text x="422.5" y="533.5" text-anchor="middle" font-size="13" fill="#d8dee9">✗</text>
+<text x="434.2" y="533.5" textLength="31.2" lengthAdjust="spacingAndGlyphs" font-size="13" fill="#d8dee9">not,</text>
+<text x="477.1" y="533.5" text-anchor="middle" font-size="13" fill="#d8dee9">⋯</text>
+<text x="488.8" y="533.5" textLength="109.2" lengthAdjust="spacingAndGlyphs" font-size="13" fill="#d8dee9">being checked.</text>
+<circle cx="32" cy="551" r="10" fill="#ffa94d" stroke="#1a1d24" stroke-width="1.5"/>
+<text x="32" y="555.5" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1d24">2</text>
+<text x="52" y="555.5" textLength="249.6" lengthAdjust="spacingAndGlyphs" font-size="13" fill="#d8dee9">Whether the whole file is valid.</text>
+<rect x="24.5" y="566.5" width="61.8" height="23" rx="5" fill="#1a1d24" stroke="#ffa94d"/>
+<text x="32" y="582.5" textLength="46.8" lengthAdjust="spacingAndGlyphs" font-size="13" font-weight="700" fill="#d8dee9">Ctrl+S</text>
+</svg>

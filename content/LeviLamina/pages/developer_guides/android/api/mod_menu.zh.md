@@ -1,0 +1,139 @@
+# Mod Menu API
+
+## 作用
+
+Mod Menu API 用于为原生模组注册运行期 UI，包括菜单模块、配置项、浮动按钮和 HUD 覆盖层绘制命令。
+
+通常在 `enable()` 中注册；如果这些 UI 仅在模组启用期间有效，请在 `disable()` 中清理。
+
+## 头文件
+
+```cpp
+#include <pl/ModMenu.hpp>
+```
+
+## 模块注册
+
+可以使用 `pl::modmenu::ModuleBuilder` 注册模块，也可以直接填充 `pl::modmenu::ModuleInfo`。
+
+```cpp
+#include <pl/Mod.hpp>
+#include <pl/ModMenu.hpp>
+
+namespace {
+constexpr const char *ModuleId = "example.speed_meter";
+
+void onToggle(std::string_view moduleId, bool enabled) {
+  (void)moduleId;
+  (void)enabled;
+}
+} // namespace
+
+bool MyMod::enable() {
+  return pl::modmenu::ModuleBuilder(ModuleId, "Speed Meter")
+      .modId(getSelf().getId())
+      .description("Shows a small movement speed overlay.")
+      .defaultEnabled(true)
+      .onToggle(onToggle)
+      .config("refreshRate", "Refresh Rate",
+              pl::modmenu::ConfigType::SliderInt, "20", "1", "60")
+      .registerModule();
+}
+```
+
+配置项类型：
+
+| 类型 | 用途 |
+| --- | --- |
+| `ConfigType::Toggle` | 布尔开关。 |
+| `ConfigType::SliderInt` | 整数滑块。 |
+| `ConfigType::SliderFloat` | 浮点数滑块。 |
+| `ConfigType::Radio` | 多选一字符串值。 |
+| `ConfigType::Color` | 颜色值。 |
+| `ConfigType::Keybind` | 按键绑定，通过 `onKeybind` 回调。 |
+| `ConfigType::Text` | 自由文本值。 |
+| `ConfigType::Button` | 操作按钮。 |
+
+配置值变化时，`ModuleBuilder::onConfigChanged()` 会收到 `(moduleId, key, value)`；`Keybind` 配置项则通过 `onKeybind()` 收到 `(moduleId, key, isDown)`。如需更丰富的设置页（包含分类、选项、范围和条件），可使用 `<pl/ModMenuConfig.hpp>` 中的 `pl::modmenu::ConfigSchemaBuilder` 构建 schema，并将其 `toJson()` 的结果传给 `setConfigSchemaJson(moduleId, json)`；调用 `clearConfigSchema(moduleId)` 可将其移除。
+
+## 浮动按钮
+
+使用 `pl::modmenu::ButtonBuilder` 注册屏幕浮动按钮。按钮可将 click、hold、toggle 和指针事件派发给 C++ callback。
+
+```cpp
+bool registerQuickButton() {
+  return pl::modmenu::ButtonBuilder("example.quick_drop", "Quick Drop")
+      .modId(getSelf().getId())
+      .moduleId(ModuleId)
+      .label("Drop")
+      .androidKeyCode(0)
+      .behavior(pl::modmenu::ButtonBehavior::Click)
+      .onEvent([](std::string_view buttonId,
+                  pl::modmenu::ButtonEvent event, float value) {
+        (void)buttonId;
+        (void)event;
+        (void)value;
+      })
+      .registerButton();
+}
+```
+
+按钮图标可通过 `ButtonBuilder::pngIcon()`、`webpIcon()`、`svgIcon()` 或通用 `icon()` helper 传入 PNG、WebP 或 SVG 数据，也可通过 `resourceIcon()` 使用具名资源。
+
+## 覆盖层绘制
+
+使用 `pl::modmenu::submitDrawCommands()` 替换指定模块当前的 HUD 覆盖层绘制命令。文本命令可使用 `registerFont()` 注册的字体；图片命令则使用 `registerImage()` 注册的原始 RGBA 像素。
+
+| API | 用途 |
+| --- | --- |
+| `registerFont(fontId, ttfData)` | 为文本命令注册 TrueType 字体。 |
+| `registerImage(imageId, imageData, width, height)` | 为图片命令注册原始 RGBA 图片像素。 |
+| `submitDrawCommands(moduleId, commands)` | 替换模块当前的覆盖层绘制命令列表。 |
+| `submitHudEditorElements(moduleId, elements)` | 声明模块中可由 HUD 编辑器移动的元素。 |
+| `getHudSurfaceSize()` | 返回 HUD 表面的宽和高。 |
+
+`registerImage()` 要求 `imageData.size()` 必须等于 `width * height * 4`。对于 `DrawCommandType::Text`，请将 `DrawCommand::fontId` 设为已注册的 font id；对于 `DrawCommandType::Image`，请将 `DrawCommand::imageId` 设为已注册的 image id。
+
+```cpp
+std::vector<unsigned char> logoRgba = loadLogoPixels();
+const int logoWidth = 64;
+const int logoHeight = 64;
+
+bool MyMod::enable() {
+  if (!pl::modmenu::registerImage("example.logo", logoRgba,
+                                  logoWidth, logoHeight)) {
+    return false;
+  }
+
+  return pl::modmenu::ModuleBuilder(ModuleId, "Speed Meter")
+      .modId(getSelf().getId())
+      .defaultEnabled(true)
+      .registerModule();
+}
+
+void submitOverlay() {
+  const std::vector<pl::modmenu::DrawCommand> commands = {
+      {
+          .type = pl::modmenu::DrawCommandType::Image,
+          .x = 12.0f,
+          .y = 12.0f,
+          .w = 32.0f,
+          .h = 32.0f,
+          .imageId = "example.logo",
+      },
+  };
+  pl::modmenu::submitDrawCommands(ModuleId, commands);
+}
+```
+
+## 菜单控制
+
+| API | 用途 |
+| --- | --- |
+| `setModuleEnabled(moduleId, enabled)` | 更新模块的启用状态。 |
+| `requestOpenMenu()` / `requestCloseMenu()` | 打开或关闭 Mod Menu。 |
+| `setFloatingMenuButtonVisible(visible)` | 显示或隐藏 Mod Menu 浮动按钮。 |
+
+## 清理
+
+如果注册的 UI 是临时的，或仅与启用状态绑定，请在 `disable()` 中调用 `pl::modmenu::unregisterModule()` 和 `unregisterButton()`。在原生模组生命周期内注册的模块和按钮也会关联所属的 `modId`。

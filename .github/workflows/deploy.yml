@@ -1,0 +1,83 @@
+# Builds levimc.org and publishes it to GitHub Pages: on each push to main, and when discover.yml finds something new
+# outside this repository (a mod's version tag, LeviLamina's or BeDD's commit) or commits to main. The checks are
+# ci.yml's, on pull requests.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # full history for the docs' "Last updated" dates (content/<Site>/pages/)
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # What earlier builds read from the mods' repositories (.cache/mods/registry.json, see
+      # src/mods/server/registry.ts), so this one reads only new tags. Without it, everything is read again (about a
+      # minute).
+      - uses: actions/cache/restore@v6
+        with:
+          path: .cache/mods
+          key: mods-registry-v2-${{ github.run_id }}
+          restore-keys: mods-registry-v2-
+
+      # The whole site into dist/ (scripts/build.mjs). The token lets the Mods build read each package repository from
+      # GitHub's GraphQL API (renamed repositories, stars, release dates, license).
+      - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      # Saved only when it changed (the key is its hash).
+      - uses: actions/cache/save@v6
+        with:
+          path: .cache/mods
+          key: mods-registry-v2-${{ hashFiles('.cache/mods/registry.json') }}
+
+      # LeviLamina's API reference (/LeviLamina/api/): Doxygen over the headers of LiteLDev/LeviLamina, written into
+      # dist/LeviLamina/api/ with the docs' chrome (doxygen/build.sh).
+      - uses: actions/checkout@v7
+        with:
+          repository: LiteLDev/LeviLamina
+          path: .cache/doxygen/LeviLamina
+
+      - run: |
+          wget -qO "$RUNNER_TEMP/doxygen.tar.gz" https://www.doxygen.nl/files/doxygen-1.16.1.linux.bin.tar.gz
+          tar -xzf "$RUNNER_TEMP/doxygen.tar.gz" -C "$RUNNER_TEMP"
+          sudo cp -r "$RUNNER_TEMP"/doxygen-*/bin/* /usr/local/bin/
+          bash doxygen/build.sh
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

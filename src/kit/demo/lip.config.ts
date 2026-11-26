@@ -1,0 +1,132 @@
+// Second demo: VitePress-style site (folder i18n, .html URLs, VitePress slugs, CommonMark) built from the
+// real lip docs. This is what a VitePress → levimc-kit port looks like (compare lip/docs/.vitepress/config.mts).
+import { defineDocsConfig, type NavEntry } from '../docs/node/config.ts';
+
+const en = (p: string) => p;
+const zh = (p: string) => '/zh' + p;
+
+function sidebar(l: (p: string) => string, t: Record<string, string>): Record<string, NavEntry[]> {
+  return {
+    [l('/intro/')]: [{ text: t.intro!, items: [{ text: t.installation!, link: l('/intro/installation') }, { text: t.quick!, link: l('/intro/quick_start') }] }],
+    [l('/concepts/')]: [
+      {
+        text: t.concepts!,
+        items: [
+          { text: t.architecture!, link: l('/concepts/architecture') },
+          { text: 'lip.toml', link: l('/concepts/lip_toml') },
+          { text: t.stateFile!, link: l('/concepts/lockfiles') },
+        ],
+      },
+    ],
+    [l('/cli/')]: [
+      {
+        text: t.cli!,
+        items: [
+          { text: t.overview!, link: l('/cli/overview') },
+          { text: t.configuration!, link: l('/cli/configuration') },
+          {
+            text: t.commands!,
+            items: ['cache_clean', 'config', 'init', 'install', 'list', 'migrate', 'pack', 'uninstall', 'update', 'versions', 'view'].map((c) => ({
+              text: c.replace('_', ' '),
+              link: l(`/cli/commands/${c}`),
+            })),
+          },
+        ],
+      },
+    ],
+    [l('/guides/')]: [
+      {
+        text: t.guides!,
+        items: [
+          { text: t.creating!, link: l('/guides/creating_packages') },
+          { text: t.migrating!, link: l('/guides/migrating_packages') },
+          { text: t.deps!, link: l('/guides/installing_dependencies') },
+          { text: t.managing!, link: l('/guides/managing_configuration') },
+          { text: t.internal!, link: l('/guides/internal_mechanism') },
+        ],
+      },
+    ],
+  };
+}
+
+const EN = {
+  intro: 'Introduction',
+  installation: 'Installation',
+  quick: 'Quick Start',
+  concepts: 'Concepts',
+  architecture: 'Architecture',
+  stateFile: 'State File',
+  cli: 'CLI Reference',
+  overview: 'Overview',
+  configuration: 'Configuration',
+  commands: 'Commands',
+  guides: 'How-to Guides',
+  creating: 'Creating Packages',
+  migrating: 'Migrating Packages',
+  deps: 'Installing Dependencies',
+  managing: 'Managing Configuration',
+  internal: 'Internal Mechanism',
+};
+const ZH = {
+  intro: '入门',
+  installation: '安装',
+  quick: '快速开始',
+  concepts: '概念',
+  architecture: '架构',
+  stateFile: '状态文件',
+  cli: 'CLI 参考',
+  overview: '概览',
+  configuration: '配置',
+  commands: '命令',
+  guides: '实践指南',
+  creating: '创建包',
+  migrating: '迁移包',
+  deps: '安装依赖',
+  managing: '管理配置',
+  internal: '内部机制',
+};
+
+export default defineDocsConfig({
+  base: '/lip/',
+  title: 'lip',
+  description: 'A general package installer',
+  project: 'lip',
+  contentDir: 'lip-content',
+  repo: 'https://github.com/LiteLDev/lip',
+  editLink: 'https://github.com/LiteLDev/lip/edit/main/docs/:path',
+  hostname: 'https://levimc.org',
+  sitemap: { hostname: 'https://levimc.org' },
+  // the language first (kit 2.23): /zh-Hans/lip/x.html; lip's /lip/zh/x.html and /lip/zh-Hans/x.html redirect there
+  i18n: {
+    mode: 'folder',
+    defaultLocale: 'root',
+    localeFirst: true,
+    locales: [
+      { code: 'root', label: 'English', lang: 'en', prefix: '' },
+      { code: 'zh', label: '简体中文', lang: 'zh-Hans', prefix: 'zh-Hans/', folder: 'zh', formerPrefixes: ['zh-Hans/', 'zh/'] },
+      { code: 'zh-Hant', label: '繁體中文', lang: 'zh-Hant', prefix: 'zh-Hant/', convertFrom: 'zh', formerPrefixes: ['zh-Hant/'] },
+    ],
+  },
+  // a moved page in each language: with localeFirst the localized one also answers at /zh-Hans/lip/intro/install.html
+  redirects: { 'intro/install': 'intro/installation.html', 'zh-Hans/intro/install': 'zh-Hans/intro/installation.html' },
+  urlStyle: 'html',
+  cleanUrls: false,
+  slug: 'vitepress',
+  markdown: { compat: 'commonmark' },
+  nav: {
+    root: [
+      { text: 'Intro', link: en('/intro/quick_start') },
+      { text: 'Concepts', link: en('/concepts/architecture') },
+      { text: 'Guides', link: en('/guides/creating_packages') },
+      { text: 'CLI', link: en('/cli/overview') },
+    ],
+    zh: [
+      { text: '介绍', link: zh('/intro/quick_start') },
+      { text: '概念', link: zh('/concepts/architecture') },
+      { text: '指南', link: zh('/guides/creating_packages') },
+      { text: 'CLI', link: zh('/cli/overview') },
+    ],
+  },
+  sidebar: { root: sidebar(en, EN), zh: sidebar(zh, ZH) },
+  social: [{ icon: 'github', link: 'https://github.com/LiteLDev/lip' }],
+});

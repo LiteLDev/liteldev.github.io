@@ -1,0 +1,331 @@
+# 🎓 数据包 API
+
+以下对象与 API 为脚本提供了基本的 BDS 数据包接口。
+
+温馨提示：使用此类 API 需要了解基岩版网络协议的数据包结构。如果出现客户端崩溃，原因在于数据包结构有误，并非 BUG。
+
+本文档不列出数据包 ID 及其结构，请自行查询。
+
+## 目录
+
+- 🔉 [数据包对象 API](#-数据包对象-api)
+- 🔌 [二进制流对象 API](#-二进制流对象-api)
+
+## 🔉 数据包对象 API
+
+在脚本引擎中，可通过「数据包对象」获取数据包的相关信息。
+
+### 获取一个数据包对象
+
+#### 从 API 获取
+
+调用某些**返回数据包对象**的函数，即可获取 BDS 提供的数据包对象。  
+详见 [二进制流对象](#-二进制流对象-api)。
+
+#### 通过数据包 ID 创建
+
+!!! warning
+    此类的全局别名仅在 0.19.1 及以后版本可用
+
+`Packet.createPacket(pktid[,raw])`  
+
+- 参数：
+  - pktid : `Integer`
+    数据包 ID
+  - raw : `Boolean`（可选参数）
+    是否创建原始网络数据包。默认值为 `false`
+- 返回值：数据包对象
+- 返回值类型： `Packet`
+
+### 数据包对象 - 函数
+
+每个数据包对象都包含一些可调用的成员函数（成员方法）。对于特定的数据包对象 `pkt`，可以通过以下函数对其进行操作：
+
+#### 获取数据包名称
+
+`pkt.getName()`
+
+- 返回值：数据包名称
+- 返回值类型： `String`
+
+#### 获取数据包 ID
+
+`pkt.getId()`
+
+- 返回值：数据包 ID
+- 返回值类型： `Integer`
+
+#### 将二进制流数据读取到数据包
+
+`pkt.read(bs)`
+
+- 参数：
+  - bs : `BinaryStream`
+    源二进制流
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+#### 将数据包数据写入二进制流
+
+`pkt.write(bs)`
+
+- 参数：
+  - bs : `BinaryStream`
+    目标二进制流
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+#### 发送数据包到指定目标
+
+!!! warning
+    此函数仅在 0.19.1 及以后版本可用
+
+`pkt.sendTo(pos)`  
+`pkt.sendTo(x,y,z,dimid)`  
+`pkt.sendTo(target)`
+
+- 参数：
+
+  - pos : `IntPos` / `FloatPos`  
+    数据包发送目标所在坐标（或者使用 x, y, z, dimid 来确定目标位置）
+  - target : `Player` / `Entity`  
+    数据包发送目标
+
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+如果 `target` 是 `Player`，数据包会发送给指定玩家。  
+如果 `target` 是 `Entity`，数据包会发送给指定实体周围的玩家。
+
+#### 发送数据包到所有客户端
+
+!!! warning
+    此函数仅在 0.19.1 及以后版本可用
+
+`pkt.sendToClients()`
+
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+#### 发送数据包到服务端
+
+!!! warning
+    此函数仅在 0.19.1 及以后版本可用
+
+`pkt.sendToServer()`
+
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+## 🔌 二进制流对象 API
+
+### 创建一个二进制流对象
+
+[JavaScript] `new BinaryStream()`
+
+[Lua] `BinaryStream()`
+
+- 返回值：二进制流对象
+- 返回值类型： `BinaryStream`
+
+### 二进制流对象 - 函数
+
+每个二进制流对象都包含一些可调用的成员函数（成员方法）。对于特定的二进制流对象 `bs`，可以通过以下函数对其进行操作：
+
+#### 重置二进制流
+
+`bs.reset()`
+
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+#### 预留二进制流容量
+
+`bs.reserve(size)`
+
+- 参数：
+
+  - size : `Integer`  
+    要预留的字节数
+
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+#### 获取二进制流读指针
+
+!!! warning
+    此函数仅在 0.19.1 及以后版本可用
+
+`bs.getReadPointer()`
+
+- 返回值：当前读指针
+- 返回值类型： `Integer`
+
+#### 设置二进制流读指针
+
+!!! warning
+    此函数仅在 0.19.1 及以后版本可用
+
+`bs.setReadPointer(pos)`
+
+- 参数：
+
+  - pos : `Integer`  
+    新的读指针
+
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+#### 获取二进制流数据
+
+!!! warning
+    此函数的可选参数和 `ByteBuffer` 返回值仅在 0.19.1 及以后版本可用
+
+`bs.getData([release])`
+
+- 参数：
+
+  - release : `Boolean`（可选参数）  
+    获取后是否清空流数据。默认值为 `false`
+
+- 返回值：二进制流数据
+- 返回值类型： `ByteBuffer`
+
+在 0.19.1 之前，此函数仅支持 `bs.getData()` 的调用形式。  
+旧版本在获取数据后总会清空流数据，且返回值类型为 `String`。
+
+由于旧版返回的是 `String`，在 JavaScript 中可能会被强制按 UTF-8 编码处理，从而损坏二进制数据，导致获取的数据不正确。
+
+#### 设置二进制流数据
+
+!!! warning
+    此函数仅在 0.19.1 及以后版本可用
+
+`bs.setData(data)`
+
+- 参数：
+
+  - data : `ByteBuffer`  
+    二进制流数据
+
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+#### 写入二进制流
+
+`bs.writexxxx(value)`
+
+- 参数：
+
+  - value : `Null`  
+    参见下表。
+    部分数值写入函数也支持传入 `String`
+
+- 返回值：是否成功
+- 返回值类型： `Boolean`
+
+| 可用函数                     | 参数类型             |
+| ---------------------------- | -------------------- |
+| writeBool                    | `Boolean` / `String` |
+| writeByte                    | `Integer` / `String` |
+| writeBytes (0.19.1 时加入)   | `ByteBuffer`         |
+| writeDouble                  | `Number` / `String`  |
+| writeFloat                   | `Float` / `String`   |
+| writeSignedBigEndianInt      | `Number` / `String`  |
+| writeSignedInt               | `Number` / `String`  |
+| writeSignedInt64             | `Number` / `String`  |
+| writeSignedShort             | `Integer` / `String` |
+| writeString                  | `String`             |
+| writeUnsignedChar            | `Integer` / `String` |
+| writeUnsignedInt             | `Number` / `String`  |
+| writeUnsignedInt64           | `Number` / `String`  |
+| writeUnsignedShort           | `Integer` / `String` |
+| writeUnsignedVarInt          | `Number` / `String`  |
+| writeUnsignedVarInt64        | `Number` / `String`  |
+| writeVarInt                  | `Number` / `String`  |
+| writeVarInt64                | `Number` / `String`  |
+| writeVec3                    | `FloatPos`           |
+| writeBlockPos (0.9.5 时加入) | `IntPos`             |
+| writeCompoundTag             | `NbtCompound`        |
+| writeItem (0.9.5 时加入)     | `Item`               |
+| writeUuid (0.19.1 时加入)    | `String`             |
+
+#### 从二进制流读取
+
+!!! warning
+    此类函数仅在 0.19.1 及更高版本中可用。
+
+`bs.readxxxx([asString])`  
+`bs.readBytes(length)`
+
+`length`（`Integer`）仅适用于 `readBytes`，表示要读取的字节数，必须大于 `0`。
+
+- 参数：
+
+  - asString : `Boolean`（可选参数）
+    仅适用于数字读取函数。传入 `true` 时，返回值会转换为 `String`。
+
+- 返回值：
+  - 读取结果
+
+| 可用函数               | 参数类型  | 返回值类型          |
+| ---------------------- | --------- | ------------------- |
+| readBool               | `Boolean` | `Boolean`/ `String` |
+| readByte               | `Boolean` | `Number` / `String` |
+| readBytes              | `Integer` | `ByteBuffer`        |
+| readUnsignedChar       | `Boolean` | `Number` / `String` |
+| readDouble             | `Boolean` | `Number` / `String` |
+| readFloat              | `Boolean` | `Number` / `String` |
+| readSignedBigEndianInt | `Boolean` | `Number` / `String` |
+| readSignedInt          | `Boolean` | `Number` / `String` |
+| readSignedInt64        | `Boolean` | `Number` / `String` |
+| readSignedShort        | `Boolean` | `Number` / `String` |
+| readString             | 无        | `String`            |
+| readUnsignedInt        | `Boolean` | `Number` / `String` |
+| readUnsignedInt64      | `Boolean` | `Number` / `String` |
+| readUnsignedShort      | `Boolean` | `Number` / `String` |
+| readUnsignedVarInt     | `Boolean` | `Number` / `String` |
+| readUnsignedVarInt64   | `Boolean` | `Number` / `String` |
+| readVarInt             | `Boolean` | `Number` / `String` |
+| readVarInt64           | `Boolean` | `Number` / `String` |
+
+`asString` 为 `true` 时，数字 `read*` 函数返回 `String`，否则返回 `Number`。
+
+#### 通过二进制流构建数据包
+
+!!! warning
+    此函数的可选参数仅在 0.19.1 及更高版本中可用。
+
+`bs.createPacket(pktid[,raw])`
+
+- 参数：
+
+  - pktid : `Integer`  
+    数据包 ID
+  - raw : `Boolean`（可选参数）  
+    是否根据当前二进制流数据创建原始网络数据包，默认为 `false`。
+
+- 返回值：数据包对象
+- 返回值类型： `Packet`
+
+在 0.19.1 之前的版本中，此函数仅支持以 `bs.createPacket(pktid)` 的形式调用。
+
+### 演示代码
+
+向玩家发送 TextPacket 数据包
+
+```js
+mc.listen("onChat", (player, message) => {
+  const text = "LLSE Packet Test";
+  const bs = new BinaryStream();
+  bs.reserve(text.length + 8);
+  bs.writeBool(false);
+  bs.writeByte(/* TextPacketPayload::mBody::MessageOnly (Variant Index) */0);
+  bs.writeByte(/* TextPacketType::Raw (Enum) */0);
+  bs.writeString(text);
+  bs.writeString(""); // xuid
+  bs.writeString(""); // platformId
+  bs.writeString(""); // filtered message
+  bs.createPacket(9).sendTo(player);
+});
+```

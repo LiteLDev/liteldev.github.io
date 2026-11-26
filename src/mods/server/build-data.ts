@@ -1,0 +1,121 @@
+// Build-time page data: the catalogue for `/mods/`, and for each mod page its
+// default READMEs and manifest, gallery, releases, LeviLamina ranges and the mods it
+// depends on or is required by. Only the server bundle (prerender, dev server)
+// imports this.
+import { BASE } from "../base-path";
+import {
+  fetchReadmes,
+  getDefaultSelection,
+  getRepositoryUrl,
+  modPath,
+  toothFromPath,
+} from "../lib/mods";
+import { DEFAULT_README_FILES } from "../lib/readme-language.ts";
+import { LOCALES, splitLocale, withLocale } from "../locales.ts";
+import type { PageData } from "../page-data";
+import type { EntryJson, LipDoc, RelatedMod } from "../types";
+import { allDependencies, loadBuildData, related, versionTargets } from "./catalog";
+import { loadShowcase } from "./showcase";
+
+/** `/mods/` and every listed or unlisted mod that has a version to show (see `lib/listing.ts`), in English. */
+export async function listPageRoutes(): Promise<string[]> {
+  const { index, byId } = await loadBuildData();
+  return [
+    BASE,
+    ...[...byId.keys()]
+      .filter((id) => getDefaultSelection(index.packages[id]!))
+      .map((id) => modPath(id)),
+  ];
+}
+
+/** Every page in every language (`/mods/…`, `/zh-Hans/mods/…`, `/zh-Hant/mods/…`). */
+export async function listRoutes(): Promise<string[]> {
+  const pages = await listPageRoutes();
+  return LOCALES.flatMap((l) => pages.map((route) => withLocale(route, l.code)));
+}
+
+/** The pages for the sitemap: every page in every language but those of old names of a repository. */
+export async function listSitemapRoutes(): Promise<string[]> {
+  const { listings } = await loadBuildData();
+  const old = new Set(
+    [...listings].filter(([, l]) => l.status === "unlisted" && l.reason === "duplicate").map(([id]) => modPath(id)),
+  );
+  return (await listRoutes()).filter((route) => !old.has(splitLocale(route).path));
+}
+
+/** A package file's variants as the JSON and the pages have them (name → entries). */
+export function variantsJson(doc: LipDoc): Record<string, EntryJson[]> {
+  return Object.fromEntries(
+    Object.entries(doc.variants).map(([name, entries]) => [name, entries.map(({ side, platform, deps }) => ({ side, platform, deps }))]),
+  );
+}
+
+const pages = new Map<string, Promise<PageData>>();
+
+/** A page's data, once per build and for every language (the pages and the JSON share it, see `server/api.ts`). */
+export function loadPageData(localizedPath: string): Promise<PageData> {
+  const pathname = splitLocale(localizedPath).path;
+  let page = pages.get(pathname);
+  if (!page) {
+    page = buildPageData(pathname);
+    pages.set(pathname, page);
+  }
+  return page;
+}
+
+async function buildPageData(pathname: string): Promise<PageData> {
+  const data = await loadBuildData();
+  const { index, catalog, renames } = data;
+
+  if (pathname === BASE) {
+    return { kind: "home", catalog, renames };
+  }
+
+  const tooth = toothFromPath(pathname);
+  const mod = tooth !== null ? index.packages[tooth] : undefined;
+  const entry = tooth !== null ? data.byId.get(tooth) : undefined;
+  const selection = mod && getDefaultSelection(mod);
+  const listing = tooth !== null ? data.listings.get(tooth) : undefined;
+  if (tooth !== null && mod && entry && selection) {
+    const repository = getRepositoryUrl(tooth, data.meta.get(tooth)?.url);
+    const doc = data.latest.get(tooth) ?? null;
+    // without GitHub's file list, the usual names are tried on GitHub (README.md elsewhere)
+    const readmeFiles =
+      data.meta.get(tooth)?.readmeFiles ?? (repository.startsWith("https://github.com/") ? DEFAULT_README_FILES : ["README.md"]);
+    const [readmes, showcase] = await Promise.all([
+      fetchReadmes(repository, selection.version, readmeFiles),
+      loadShowcase(repository),
+    ]);
+    const relatedMap: Record<string, RelatedMod> = {};
+    const deps = new Set(allDependencies(data, tooth));
+    for (const entries of Object.values(doc?.variants ?? {})) {
+      for (const e of entries) for (const key of Object.keys(e.deps)) deps.add(key.split("#")[0]!.toLowerCase());
+    }
+    for (const dep of deps) relatedMap[dep] = related(data, dep);
+    return {
+      kind: "mod",
+      id: tooth,
+      mod,
+      entry,
+      repository,
+      prerendered: {
+        ...selection,
+        info: doc?.info ?? null,
+        variants: doc ? variantsJson(doc) : null,
+        readmes,
+      },
+      readmeFiles,
+      releases: data.meta.get(tooth)?.releases ?? {},
+      targets: versionTargets(data, tooth),
+      lipToml: [...(data.origins.get(tooth) ?? [])].filter(([, o]) => o.file === "lip.toml").map(([version]) => version),
+      dependents: (data.dependents.get(tooth.toLowerCase()) ?? []).map((t) => related(data, t)),
+      related: relatedMap,
+      hasIssues: data.meta.get(tooth)?.hasIssues ?? false,
+      ...(listing?.status === "unlisted" && listing.reason === "duplicate" ? { canonical: listing.canonical } : {}),
+      showcase,
+      renames,
+    };
+  }
+
+  return { kind: "not-found", renames };
+}

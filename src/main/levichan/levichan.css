@@ -1,0 +1,408 @@
+/* LeviChan's 3D space (loaded with it, on demand): the world is drawn by three.js on #lc-three, her WebGL canvas
+   over it with a camera matched to it; the page stays as it was underneath. */
+html.lc-3d,
+html.lc-3d body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+html.lc-3d {
+  --lc-glow: #7fd4a4;
+  --lc-ui-bg: rgba(255, 253, 246, 0.94);
+  --lc-ui-fg: #1d3328;
+  --lc-ui-line: rgba(29, 51, 40, 0.14);
+}
+html.lc-3d.dark {
+  --lc-ui-bg: rgba(16, 30, 40, 0.94);
+  --lc-ui-fg: #e3efe8;
+  --lc-ui-line: rgba(227, 239, 232, 0.16);
+}
+
+#lc-three {
+  position: fixed;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  inset: 0;
+  /* the window as it is (100vh is taller than what shows on a phone with its toolbar out) */
+  width: 100%;
+  height: 100%;
+  z-index: 2147483000;
+  touch-action: none;
+  outline: none;
+  display: block;
+}
+#lc-canvas {
+  position: fixed;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  inset: 0;
+  /* the window as it is (100vh is taller than what shows on a phone with its toolbar out) */
+  width: 100%;
+  height: 100%;
+  z-index: 2147483001;
+  pointer-events: none;
+  touch-action: none;
+  outline: none;
+}
+#lc-canvas.lc-hot {
+  pointer-events: auto;
+  cursor: grab;
+}
+#lc-canvas.lc-hot.lc-face {
+  cursor: pointer;
+}
+
+.lc-ui {
+  position: fixed;
+  z-index: 2147483003;
+  color: var(--lc-ui-fg);
+  font: 13px/1.45 var(--kit-font-sans, system-ui, sans-serif);
+}
+#lc-load {
+  left: 50%;
+  bottom: 9vh;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--lc-ui-bg);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--lc-ui-line);
+  transition: opacity 0.4s;
+  white-space: nowrap;
+}
+#lc-load b {
+  display: inline-block;
+  width: 120px;
+  height: 6px;
+  margin-left: 10px;
+  border-radius: 3px;
+  background: var(--lc-ui-line);
+  vertical-align: middle;
+  overflow: hidden;
+}
+#lc-load b > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--lc-glow);
+  transition: width 0.2s;
+}
+
+#lc-fab {
+  left: 14px;
+  bottom: 14px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--lc-glow);
+  background: var(--lc-ui-bg);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s;
+}
+/* a phone: the dialogue takes the bottom of the screen, so the button goes to the top corner (the quest is on
+   the other side) */
+@media (max-width: 760px) {
+  #lc-fab {
+    left: auto;
+    right: 14px;
+    bottom: auto;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+  }
+  #lc-quest {
+    max-width: calc(100vw - 84px);
+  }
+}
+#lc-fab:hover {
+  transform: scale(1.08);
+}
+#lc-fab img,
+.lc-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 18%;
+  display: block;
+}
+
+#lc-menu {
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--lc-ui-bg);
+  border: 1px solid var(--lc-ui-line);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(8px);
+}
+#lc-menu[hidden] {
+  display: none;
+}
+#lc-menu h4 {
+  margin: 2px 6px 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+#lc-menu p {
+  margin: 0 6px 8px;
+  opacity: 0.7;
+  font-size: 12px;
+  max-width: 240px;
+}
+#lc-menu .lc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 8px;
+}
+#lc-menu .lc-seg {
+  display: inline-flex;
+  border: 1px solid var(--lc-ui-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+#lc-menu .lc-seg button,
+#lc-menu button.lc-item {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+#lc-menu .lc-seg button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--lc-glow) 35%, transparent);
+}
+#lc-menu button.lc-item {
+  width: 100%;
+  text-align: left;
+  padding: 7px 6px;
+  border-radius: 8px;
+}
+#lc-menu button.lc-item:hover,
+#lc-menu .lc-row:hover {
+  background: color-mix(in srgb, var(--lc-glow) 14%, transparent);
+}
+#lc-menu input[type='checkbox'] {
+  accent-color: var(--lc-glow);
+}
+
+.lc-bit {
+  position: fixed;
+  z-index: 2147483002;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+.lc-bubble {
+  z-index: 2147483003;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: var(--lc-ui-bg);
+  border: 1px solid var(--lc-ui-line);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  font-size: 14px;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  transition: opacity 0.3s;
+}
+
+
+/* the story: her dialogue box, the things to do, the ending card */
+#lc-dlg {
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 32px));
+  min-height: 92px;
+  padding: 14px 18px 16px;
+  border-radius: 16px;
+  background: var(--lc-ui-bg);
+  border: 1px solid var(--lc-ui-line);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  user-select: none;
+}
+#lc-dlg[hidden],
+#lc-quest[hidden] {
+  display: none;
+}
+.lc-dlg-name {
+  position: absolute;
+  top: -13px;
+  left: 18px;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: var(--lc-glow);
+  color: #10261a;
+  font-weight: 700;
+  font-size: 13px;
+}
+.lc-dlg-name:empty {
+  display: none;
+}
+.lc-dlg-text {
+  margin: 4px 0 0;
+  font-size: 16px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+#lc-dlg.lc-sys .lc-dlg-text {
+  font-style: italic;
+  opacity: 0.8;
+}
+.lc-dlg-next {
+  position: absolute;
+  right: 16px;
+  bottom: 8px;
+  font-size: 11px;
+  opacity: 0;
+  color: var(--lc-glow);
+}
+#lc-dlg.lc-typed .lc-dlg-next {
+  animation: lc-blink 1s infinite;
+}
+@keyframes lc-blink {
+  50% {
+    opacity: 1;
+  }
+}
+.lc-choices {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+.lc-choices button {
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  color: inherit;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--lc-ui-line);
+  background: color-mix(in srgb, var(--lc-glow) 10%, transparent);
+  cursor: pointer;
+}
+.lc-choices button:hover,
+.lc-choices button:focus-visible {
+  background: color-mix(in srgb, var(--lc-glow) 30%, transparent);
+}
+#lc-quest {
+  left: 14px;
+  top: 14px;
+  max-width: min(320px, calc(100vw - 28px));
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--lc-ui-bg);
+  border: 1px solid var(--lc-ui-line);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+}
+#lc-quest h5 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+#lc-quest b {
+  font-size: 11px;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#lc-quest ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+#lc-quest li span {
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+#lc-quest li.lc-done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.lc-wait {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--lc-ui-line);
+}
+.lc-wait .lc-clock {
+  font-size: 18px;
+  opacity: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--lc-glow);
+}
+.lc-wait small {
+  display: block;
+  opacity: 0.6;
+}
+#lc-end {
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 12, 20, 0.45);
+  backdrop-filter: blur(3px);
+  animation: lc-fade 1.2s;
+}
+@keyframes lc-fade {
+  from {
+    opacity: 0;
+  }
+}
+.lc-end-card {
+  width: min(460px, calc(100vw - 32px));
+  padding: 24px;
+  border-radius: 18px;
+  text-align: center;
+  background: var(--lc-ui-bg);
+  border: 1px solid var(--lc-ui-line);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+.lc-end-card h3 {
+  margin: 6px 0 10px;
+  font-size: 22px;
+}
+.lc-end-card p {
+  margin: 0 0 14px;
+  line-height: 1.6;
+}
+.lc-end-gallery {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.lc-end-gallery i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--lc-ui-line);
+}
+.lc-end-gallery i.lc-seen {
+  background: var(--lc-glow);
+}
+.lc-end-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.lc-end-actions button {
+  font: inherit;
+  color: inherit;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--lc-ui-line);
+  background: color-mix(in srgb, var(--lc-glow) 18%, transparent);
+  cursor: pointer;
+}
+#lc-menu .lc-story-row small {
+  opacity: 0.6;
+}

@@ -1,0 +1,174 @@
+/*
+ * levimc-kit — painterly layer. "Painterly = atmosphere": colour fields and brush-dab texture live in
+ * heroes, backdrops and margins only. Reading surfaces stay calm canvas.
+ *
+ * Textures (--kit-brush, --kit-grain, --kit-paint-*) are generated into theme/generated.css.
+ */
+
+@layer components {
+  /* ------------------------------------------------------------------ page backdrop */
+  /* The painted backdrop is the page root's own background, scrolling with the page (kit 2.19): the colour dabs
+     (pre-rendered per theme from the kit ≤ 2.18 radial gradients, a tile one viewport wide and two high whose
+     second half mirrors the first, so it repeats seamlessly), the brush in soft-light and the grain in multiply /
+     screen (opacity baked into the tiles), over the canvas. It used to be a fixed full-viewport element: one more
+     full-screen layer to composite on every scroll frame, plus the gradients' raster at every load and theme switch.
+     The hook is the .kit-backdrop element (PaintedBackdrop, the static and Doxygen pages), which no longer paints.
+     Never `background-attachment: fixed` (the whole page repaints on every scroll frame); `lvh`, so a phone's URL bar
+     showing and hiding does not rescale the tile. body and app shells stay transparent over it. */
+  :root:has(.kit-backdrop) {
+    background:
+      var(--kit-backdrop-grain) 0 0 / 180px 180px,
+      var(--kit-backdrop-brush) 0 0 / 256px 256px,
+      var(--kit-backdrop-dabs) 0 0 / 100% 200lvh repeat-y,
+      var(--color-canvas);
+    background-blend-mode: multiply, soft-light, normal;
+  }
+  :root.dark:has(.kit-backdrop) {
+    background-blend-mode: screen, soft-light, normal;
+  }
+  :root:has(.kit-backdrop) body {
+    background: transparent;
+  }
+  .kit-backdrop {
+    display: none;
+  }
+  /* Painted scene band at the very top of the page (scrolls away), dissolving into the canvas in pixel blocks
+     (PaintedBackdrop adds .kit-dissolve-bottom). */
+  .kit-backdrop-scene {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--kit-scene-height, 15rem);
+    background-image: var(--kit-paint-lilies);
+    background-size: cover;
+    background-position: center 35%;
+    opacity: var(--kit-scene-opacity, 0.34);
+  }
+  .dark .kit-backdrop-scene {
+    background-image: var(--kit-paint-sunrise);
+    opacity: var(--kit-scene-opacity-dark, 0.42);
+  }
+  /* A page with a painted hero has its scene there: no second scene band behind the header above it, so the
+     header looks the same on every hero page (a home layout, a custom layout with PaintedHero, an app page). */
+  :root:has(.kit-hero) .kit-backdrop-scene {
+    display: none;
+  }
+  /* Anything placed after the backdrop sits above it. */
+  .kit-above-backdrop {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* A calm reading surface on top of the painted page. */
+  .kit-canvas-surface {
+    background: color-mix(in srgb, var(--color-canvas) 94%, transparent);
+  }
+
+  /* Painted panel: impressionist texture inside a block (cards, banners, callouts). */
+  .kit-painted {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .kit-painted::before,
+  .kit-painted::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+  .kit-painted::before {
+    background:
+      radial-gradient(60% 80% at 0% 0%, color-mix(in srgb, var(--color-primary) 20%, transparent), transparent 70%),
+      radial-gradient(50% 70% at 100% 0%, color-mix(in srgb, var(--color-accent-2) 20%, transparent), transparent 70%),
+      radial-gradient(60% 80% at 100% 100%, color-mix(in srgb, var(--color-accent-1) 18%, transparent), transparent 70%),
+      radial-gradient(50% 60% at 10% 100%, color-mix(in srgb, var(--color-accent-4) 18%, transparent), transparent 70%);
+  }
+  .kit-painted::after {
+    background: var(--kit-brush) 0 0 / 256px 256px;
+    mix-blend-mode: soft-light;
+    opacity: 0.3;
+  }
+
+  /* ------------------------------------------------------------------ painted hero */
+  /* The painting fills the right of the hero and dissolves into the page in 6px blocks along its left and bottom
+     edges (the kit's one painting-to-canvas transition, see .kit-dissolve-* in pixel.css): the copy sits on the
+     page's own canvas, so it needs no scrim. Below 961px the painting is a band at the top, dissolving downwards. */
+  .kit-hero {
+    --kit-hero-paint-x: max(50% + 1rem, 41.5rem);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .kit-hero-paint {
+    position: absolute;
+    inset: 0 0 0 var(--kit-hero-paint-x);
+    z-index: -1;
+    pointer-events: none;
+  }
+  .kit-hero-art,
+  .kit-hero-brush {
+    position: absolute;
+    inset: 0;
+  }
+  .kit-hero-art svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .kit-hero-art .kit-scene-dark {
+    display: none;
+  }
+  .dark .kit-hero-art .kit-scene-light {
+    display: none;
+  }
+  .dark .kit-hero-art .kit-scene-dark {
+    display: block;
+  }
+  .kit-hero-brush {
+    background-image: var(--kit-brush);
+    background-size: 256px 256px;
+    mix-blend-mode: soft-light;
+    opacity: 0.5;
+  }
+  /* (.kit-hero-strip: a one-line hero that keeps the painting on the right at every width, e.g. levimc.org/mods/) */
+  @media (max-width: 960px) {
+    .kit-hero:not(.kit-hero-strip) .kit-hero-paint {
+      inset: 0 0 auto 0;
+      height: var(--kit-hero-band, clamp(15rem, 64vw, 24rem));
+    }
+    .kit-hero:not(.kit-hero-strip) .kit-hero-paint > .kit-dissolve-left {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+  }
+  /* kit 2.0's grass horizon and text scrim: no longer drawn */
+  .kit-hero-horizon,
+  .kit-hero-scrim {
+    display: none;
+  }
+
+  /* MC item frame: a wooden frame for the hero image / project logo. */
+  .kit-item-frame {
+    --px-border: #3b2412;
+    --px-bevel: inset 0 0 0 calc(var(--px) * 3) #8a5a33, inset 0 0 0 calc(var(--px) * 4) #5e3b1f,
+      inset calc(var(--px) * 3) calc(var(--px) * 3) 0 calc(var(--px) * 3) rgb(255 255 255 / 0.08);
+    display: grid;
+    place-items: center;
+    padding: 1.25rem;
+    background: color-mix(in srgb, #c9a46a 30%, var(--color-surface));
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--px-border),
+      0 var(--px) 0 0 var(--px-border),
+      calc(var(--px) * -1) 0 0 0 var(--px-border),
+      var(--px) 0 0 0 var(--px-border),
+      var(--px-bevel),
+      0 18px 40px -16px rgb(0 0 0 / 0.45);
+  }
+}

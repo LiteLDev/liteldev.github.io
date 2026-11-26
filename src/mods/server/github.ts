@@ -1,0 +1,259 @@
+// What GitHub knows about each mod's repository: where it lives today (a
+// tooth keeps the path it was published under; GitHub redirects renamed and
+// transferred repositories from there), its stars, when it was created and
+// last updated, its license, its releases and its README files (one GraphQL
+// request per 50 mods), and how many times its releases' files were downloaded
+// (one REST request per repository: GraphQL refuses release files for a whole
+// batch as too costly).
+//
+// Needs GITHUB_TOKEN (GitHub's GraphQL API requires one; the workflow passes
+// its own). Without a token, or if GitHub cannot be reached, the build goes on
+// without this data: links keep the tooth's address, there are no stars or downloads,
+// dates are when the build first saw a version, and the "Newest" sort and the License filter are left out (also when
+// only some batches could be read).
+import type { RepositoryRenames } from "../lib/markdown";
+import { readmeFiles } from "../lib/readme-language.ts";
+import type { ReleaseInfo } from "../types";
+
+const GITHUB_PREFIX = "github.com/";
+const GITHUB_URL = "https://github.com/";
+const BATCH = 50;
+const RELEASES = 100;
+
+export interface RepoMeta {
+  /** Where the repository lives today. */
+  url: string;
+  stars: number;
+  /**
+   * How many times its releases' files were downloaded (lip and the launchers
+   * install from them), over every release; absent when no release has a
+   * file (the mod is installed some other way) or GitHub did not say.
+   */
+  downloads?: number;
+  /** When anything about the repository last changed (lipr's `updated_at`). */
+  updatedAt: string;
+  createdAt?: string;
+  /** SPDX id, when GitHub recognises a license. */
+  license?: string;
+  /** Releases by version (the tag without a leading `v`). */
+  releases: Record<string, ReleaseInfo>;
+  /** The most recent release's date. */
+  latestRelease?: string;
+  /** The repository takes issues. */
+  hasIssues: boolean;
+  /** A template repository (not listed, see `lib/listing.ts`). */
+  isTemplate: boolean;
+  /** It belongs to an organization, not a user (a covariate of the default order). */
+  orgOwned: boolean;
+  /** Its README files (`README.md`, `README.zh.md` …) on the default branch, see `readmeFiles`. */
+  readmeFiles?: string[];
+}
+
+interface ReleaseNode {
+  tagName: string;
+  publishedAt: string | null;
+  isPrerelease: boolean;
+}
+
+interface ReleaseConnection {
+  totalCount: number;
+  pageInfo: { hasNextPage: boolean; endCursor: string | null };
+  nodes: ReleaseNode[];
+}
+
+interface RepositoryNode {
+  url: string;
+  stargazerCount: number;
+  updatedAt: string;
+  createdAt: string;
+  hasIssuesEnabled: boolean;
+  isTemplate: boolean;
+  owner: { __typename: string };
+  licenseInfo: { spdxId: string | null } | null;
+  releases: ReleaseConnection;
+  defaultBranchRef: { target: { tree?: { entries: { name: string }[] } } | null } | null;
+}
+
+const RELEASE_FIELDS = `totalCount pageInfo { hasNextPage endCursor } nodes { tagName publishedAt isPrerelease }`;
+
+async function graphql<T>(token: string, query: string): Promise<T> {
+  const res = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "User-Agent": "levimc.org-mods-build",
+    },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) throw new Error(`GitHub GraphQL API: HTTP ${res.status}`);
+  const body = (await res.json()) as { data?: T; errors?: { type?: string; message: string }[] };
+  // A repository that no longer exists is a NOT_FOUND error next to the other results.
+  const fatal = body.errors?.filter((e) => e.type !== "NOT_FOUND");
+  if (!body.data || fatal?.length) throw new Error(`GitHub GraphQL API: ${fatal?.[0]?.message ?? "no data"}`);
+  return body.data;
+}
+
+const ownerAndName = (tooth: string) => {
+  const [owner = "", name = ""] = tooth.slice(GITHUB_PREFIX.length).split("/");
+  return `owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(name)}`;
+};
+
+function addReleases(meta: RepoMeta, nodes: ReleaseNode[]) {
+  for (const node of nodes) {
+    if (!node.publishedAt) continue;
+    const version = node.tagName.replace(/^v(?=\d)/, "");
+    meta.releases[version] ??= { tag: node.tagName, date: node.publishedAt, prerelease: node.isPrerelease };
+    if (!meta.latestRelease || node.publishedAt > meta.latestRelease) meta.latestRelease = node.publishedAt;
+  }
+}
+
+let cost = 0;
+
+async function queryBatch(token: string, tooths: string[]): Promise<Map<string, RepoMeta>> {
+  const fields = tooths.map(
+    (tooth, i) =>
+      `r${i}: repository(${ownerAndName(tooth)}) { url stargazerCount updatedAt createdAt hasIssuesEnabled isTemplate owner { __typename } licenseInfo { spdxId } ` +
+      `releases(first: ${RELEASES}, orderBy: { field: CREATED_AT, direction: DESC }) { ${RELEASE_FIELDS} } ` +
+      `defaultBranchRef { target { ... on Commit { tree { entries { name } } } } } }`,
+  );
+  const data = await graphql<Record<string, RepositoryNode | null> & { rateLimit: { cost: number } }>(
+    token,
+    `query { rateLimit { cost remaining } ${fields.join("\n")} }`,
+  );
+  cost += data.rateLimit.cost;
+  const out = new Map<string, RepoMeta>();
+  for (const [i, tooth] of tooths.entries()) {
+    const node = data[`r${i}`] as RepositoryNode | null | undefined;
+    if (!node) continue;
+    const spdx = node.licenseInfo?.spdxId;
+    const files = node.defaultBranchRef?.target?.tree?.entries.map((e) => e.name);
+    const meta: RepoMeta = {
+      url: node.url,
+      stars: node.stargazerCount,
+      updatedAt: node.updatedAt,
+      createdAt: node.createdAt,
+      ...(spdx ? { license: spdx } : {}),
+      releases: {},
+      hasIssues: node.hasIssuesEnabled,
+      isTemplate: node.isTemplate,
+      orgOwned: node.owner.__typename === "Organization",
+      ...(files ? { readmeFiles: readmeFiles(files) } : {}),
+    };
+    addReleases(meta, node.releases.nodes);
+    // Mods with more releases than one page (LeviLamina, LegacyScriptEngine) get the rest one by one.
+    let { hasNextPage, endCursor } = node.releases.pageInfo;
+    while (hasNextPage && endCursor) {
+      const more = await graphql<{ repository: { releases: ReleaseConnection } | null; rateLimit: { cost: number } }>(
+        token,
+        `query { rateLimit { cost remaining } repository(${ownerAndName(tooth)}) { releases(first: ${RELEASES}, after: ${JSON.stringify(endCursor)}, orderBy: { field: CREATED_AT, direction: DESC }) { ${RELEASE_FIELDS} } } }`,
+      );
+      cost += more.rateLimit.cost;
+      if (!more.repository) break;
+      addReleases(meta, more.repository.releases.nodes);
+      ({ hasNextPage, endCursor } = more.repository.releases.pageInfo);
+    }
+    out.set(tooth, meta);
+  }
+  return out;
+}
+
+const DOWNLOAD_REQUESTS = 8;
+
+/** Downloads of a repository's release files, summed over every release; undefined when none has a file. */
+async function releaseDownloads(token: string, repoUrl: string): Promise<number | undefined> {
+  let total: number | undefined;
+  for (let page = 1; ; page++) {
+    const res = await fetch(`https://api.github.com/repos/${repoUrl.slice(GITHUB_URL.length)}/releases?per_page=100&page=${page}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "User-Agent": "levimc.org-mods-build" },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const releases = (await res.json()) as { draft: boolean; assets: { download_count: number }[] }[];
+    for (const r of releases) if (!r.draft && r.assets.length) total = (total ?? 0) + r.assets.reduce((n, a) => n + a.download_count, 0);
+    if (releases.length < 100) return total;
+  }
+}
+
+/** Adds `downloads` to every repository, a few requests at a time; returns how many could not be read. */
+async function addDownloads(token: string, meta: Map<string, RepoMeta>): Promise<number> {
+  // one request per repository, not per tooth: a renamed one is listed under several
+  const byUrl = new Map<string, RepoMeta[]>();
+  for (const m of meta.values()) if (m.url.startsWith(GITHUB_URL)) byUrl.set(m.url, [...(byUrl.get(m.url) ?? []), m]);
+  const queue = [...byUrl.keys()];
+  let failed = 0;
+  await Promise.all(
+    Array.from({ length: DOWNLOAD_REQUESTS }, async () => {
+      for (let repoUrl = queue.shift(); repoUrl; repoUrl = queue.shift()) {
+        try {
+          const downloads = await releaseDownloads(token, repoUrl);
+          if (downloads !== undefined) for (const m of byUrl.get(repoUrl)!) m.downloads = downloads;
+        } catch (error) {
+          failed++;
+          console.warn(`::warning::Could not read the release downloads of ${repoUrl}: ${String(error)}`);
+        }
+      }
+    }),
+  );
+  return failed;
+}
+
+export interface RepoMetaResult {
+  /** Tooth → what GitHub knows about its repository, for the tooths GitHub knows. */
+  meta: Map<string, RepoMeta>;
+  /**
+   * Every batch was read. Only then do the License filter and the "Newest"
+   * sort cover the whole catalogue (a mod missing from a failed batch
+   * would look closed-source and the oldest).
+   */
+  complete: boolean;
+}
+
+/** What GitHub knows about the mods' repositories (a failed batch is tried once more). */
+export async function fetchRepoMeta(tooths: string[]): Promise<RepoMetaResult> {
+  const token = process.env.GITHUB_TOKEN;
+  const github = tooths.filter((t) => t.startsWith(GITHUB_PREFIX) && t.split("/").length === 3);
+  if (!token) {
+    console.warn("GITHUB_TOKEN is not set: no GitHub data (links keep the tooths' addresses, no stars, dates are when the build first saw a version)");
+    return { meta: new Map(), complete: false };
+  }
+  const meta = new Map<string, RepoMeta>();
+  let complete = true;
+  for (let i = 0; i < github.length; i += BATCH) {
+    const batch = github.slice(i, i + BATCH);
+    // a failed batch costs its own mods' data, not the others'
+    let result: Map<string, RepoMeta> | undefined;
+    for (let attempt = 1; !result && attempt <= 2; attempt++) {
+      // a moment's pause before the retry: a rate limit or a 502 rarely clears at once
+      if (attempt > 1) await new Promise((resolve) => setTimeout(resolve, 3000));
+      try {
+        result = await queryBatch(token, batch);
+      } catch (error) {
+        console.warn(`::warning::Could not read GitHub data for ${batch.length} mods (attempt ${attempt} of 2): ${String(error)}`);
+      }
+    }
+    if (result) for (const [tooth, m] of result) meta.set(tooth, m);
+    else complete = false;
+  }
+  const downloadsFailed = await addDownloads(token, meta);
+  console.log(
+    `GitHub: ${meta.size} of ${github.length} repositories (GraphQL cost ${cost})${complete ? "" : "; incomplete, so no License filter and no Newest sort"}; ` +
+      `release downloads for ${[...meta.values()].filter((m) => m.downloads !== undefined).length}${downloadsFailed ? ` (${downloadsFailed} could not be read)` : ""}`,
+  );
+  return { meta, complete };
+}
+
+/**
+ * The mods whose repository moved, as lower-case `owner/repo` → current
+ * `Owner/Repo`: the form README links and avatars are matched against (see
+ * `updateUrl` in `lib/markdown.ts`).
+ */
+export function repositoryRenames(meta: Map<string, { url: string }>): RepositoryRenames {
+  const renames: Record<string, string> = {};
+  for (const [tooth, { url }] of meta) {
+    if (!tooth.startsWith(GITHUB_PREFIX) || !url.startsWith(GITHUB_URL)) continue;
+    const from = tooth.slice(GITHUB_PREFIX.length).toLowerCase();
+    const to = url.slice(GITHUB_URL.length);
+    if (to.toLowerCase() !== from) renames[from] = to;
+  }
+  return renames;
+}

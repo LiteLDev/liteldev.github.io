@@ -1,0 +1,723 @@
+// UI strings for the shared chrome (GlobalBar, SiteFooter, theme/locale controls) and the docs engine UI.
+// Content (page text, nav titles) is never translated here — only chrome.
+
+export const UI_LOCALES = ['en', 'zh-CN', 'zh-HK', 'es', 'ru', 'de', 'ja', 'ko', 'fr'] as const;
+export type UiLocale = (typeof UI_LOCALES)[number];
+
+export interface UiStrings {
+  // global bar / network
+  network: string;
+  home: string;
+  projects: string;
+  docs: string;
+  /** The bar tab of levimc.org/tutorials/ (kit 2.21). */
+  tutorials: string;
+  /** The bar tab of levimc.org/faq/ (kit 2.25): questions and answers for every project. */
+  faq: string;
+  /** Top-bar / footer label of LeviMC Mods, levimc.org/mods/ ("Mods"). */
+  mods: string;
+  community: string;
+  blog: string;
+  about: string;
+  github: string;
+  menu: string;
+  close: string;
+  // footer
+  tagline: string;
+  footerConnect: string;
+  email: string;
+  /** Footer link to levimc.org/support/. */
+  supportUs: string;
+  rights: string;
+  // theme & locale
+  theme: string;
+  themeLight: string;
+  themeDark: string;
+  /** kit 1.0 label of the follow-the-system state (kept for overrides; the switcher shows `themeAuto`). */
+  themeSystem: string;
+  themeAuto: string;
+  switchTheme: string;
+  language: string;
+  // docs UI
+  skipToContent: string;
+  search: string;
+  searchPlaceholder: string;
+  searchNoResults: string;
+  searchLoading: string;
+  searchNavigate: string;
+  searchSelect: string;
+  searchClose: string;
+  onThisPage: string;
+  previous: string;
+  next: string;
+  editPage: string;
+  lastUpdated: string;
+  backToTop: string;
+  sidebarNav: string;
+  mainNav: string;
+  notFoundTitle: string;
+  notFoundText: string;
+  goHome: string;
+  copyCode: string;
+  copied: string;
+  external: string;
+  /** Display name of levimc.org/mods/ ("LeviMC Mods"). */
+  modsName: string;
+  /** One-line description of levimc.org/mods/. */
+  modsBlurb: string;
+  /** Short description of each project, keyed by project id. */
+  projectBlurbs: Record<string, string>;
+  /** Group headings of the Projects menu, keyed by ProjectGroupId. */
+  projectGroups: Record<string, string>;
+  /** The Projects menu's link to the GitHub organisation. */
+  allRepositories: string;
+}
+
+const en: UiStrings = {
+  network: 'LeviMC network',
+  home: 'Home',
+  projects: 'Projects',
+  docs: 'Docs',
+  tutorials: 'Tutorials',
+  faq: 'FAQ',
+  mods: 'Mods',
+  community: 'Community',
+  blog: 'Blog',
+  about: 'About',
+  github: 'GitHub',
+  menu: 'Menu',
+  close: 'Close',
+  tagline: 'Open-source modding for Minecraft Bedrock Edition — mod loader, script engine, package installer, launchers and official mods.',
+  footerConnect: 'Connect',
+  email: 'Email',
+  supportUs: 'Support us',
+  rights: 'LeviMC',
+  theme: 'Theme',
+  themeLight: 'Light',
+  themeDark: 'Dark',
+  themeSystem: 'System',
+  themeAuto: 'Auto',
+  switchTheme: 'Switch theme',
+  language: 'Language',
+  skipToContent: 'Skip to content',
+  search: 'Search',
+  searchPlaceholder: 'Search LeviMC…',
+  searchNoResults: 'No results for',
+  searchLoading: 'Loading search index…',
+  searchNavigate: 'to navigate',
+  searchSelect: 'to select',
+  searchClose: 'to close',
+  onThisPage: 'On this page',
+  previous: 'Previous',
+  next: 'Next',
+  editPage: 'Edit this page on GitHub',
+  lastUpdated: 'Last updated',
+  backToTop: 'Back to top',
+  sidebarNav: 'Section navigation',
+  mainNav: 'Main navigation',
+  notFoundTitle: 'This page wandered off',
+  notFoundText: 'Your compass is spinning — the page you are looking for does not exist or has moved.',
+  goHome: 'Back to the docs home',
+  copyCode: 'Copy code',
+  copied: 'Copied!',
+  external: 'opens in a new tab',
+  modsName: 'LeviMC Mods',
+  modsBlurb: 'Mods and plugins for Minecraft Bedrock, ready to install with lip',
+  projectBlurbs: {
+    LeviLamina: 'Mod loader for Minecraft Bedrock Edition',
+    LegacyScriptEngine: 'Runs LLSE script plugins on LeviLamina',
+    LeviStone: 'Runtime for Endstone plugins on LeviLamina',
+    lip: 'Runs a LeviLamina server and manages its packages',
+    LeviLauncher: 'Bedrock launcher for Windows and Android',
+    LeviOptimize: 'Performance optimizations for LeviLamina servers and clients',
+    LeviAntiCheat: 'Anti-cheat for LeviLamina servers',
+    MoreDimensions: 'API for custom dimensions on Bedrock servers',
+    BeDD: 'Scripted client input for mod tests',
+    bedboo: 'Bedrock bots with a mineflayer-compatible API',
+  },
+  projectGroups: { core: 'Core', mods: 'Official mods' },
+  allRepositories: 'All repositories on GitHub',
+};
+
+const zhCN: UiStrings = {
+  network: 'LeviMC 站点导航',
+  home: '首页',
+  projects: '项目',
+  docs: '文档',
+  tutorials: '教程',
+  faq: '问答',
+  mods: '模组',
+  community: '社区',
+  blog: '博客',
+  about: '关于',
+  github: 'GitHub',
+  menu: '菜单',
+  close: '关闭',
+  tagline: '面向 Minecraft 基岩版的开源模组生态——模组加载器、脚本引擎、包安装器、启动器与官方模组。',
+  footerConnect: '联系我们',
+  email: '邮箱',
+  supportUs: '支持我们',
+  rights: 'LeviMC',
+  theme: '主题',
+  themeLight: '浅色',
+  themeDark: '深色',
+  themeSystem: '跟随系统',
+  themeAuto: '自动',
+  switchTheme: '切换主题',
+  language: '语言',
+  skipToContent: '跳到正文',
+  search: '搜索',
+  searchPlaceholder: '搜索 LeviMC…',
+  searchNoResults: '没有找到结果：',
+  searchLoading: '正在加载搜索索引…',
+  searchNavigate: '切换',
+  searchSelect: '打开',
+  searchClose: '关闭',
+  onThisPage: '本页目录',
+  previous: '上一页',
+  next: '下一页',
+  editPage: '在 GitHub 上编辑此页',
+  lastUpdated: '最后更新于',
+  backToTop: '返回顶部',
+  sidebarNav: '章节导航',
+  mainNav: '主导航',
+  notFoundTitle: '这个页面走丢了',
+  notFoundText: '指南针在原地打转——你要找的页面不存在或已被移动。',
+  goHome: '返回文档首页',
+  copyCode: '复制代码',
+  copied: '已复制！',
+  external: '在新标签页中打开',
+  modsName: 'LeviMC 模组',
+  modsBlurb: 'Minecraft 基岩版的模组与插件，可用 lip 一键安装',
+  projectBlurbs: {
+    LeviLamina: 'Minecraft 基岩版模组加载器',
+    LegacyScriptEngine: '在 LeviLamina 上运行 LLSE 脚本插件',
+    LeviStone: '在 LeviLamina 上运行 Endstone 插件',
+    lip: '运行 LeviLamina 服务器并管理它的包',
+    LeviLauncher: 'Windows 与 Android 基岩版启动器',
+    LeviOptimize: '为 LeviLamina 服务器和客户端优化性能',
+    LeviAntiCheat: '为 LeviLamina 服务器提供反作弊',
+    MoreDimensions: '为基岩版服务器添加自定义维度的 API',
+    BeDD: '用脚本驱动客户端，测试模组',
+    bedboo: '兼容 mineflayer API 的基岩版机器人库',
+  },
+  projectGroups: { core: '核心', mods: '官方模组' },
+  allRepositories: '在 GitHub 上查看全部仓库',
+};
+
+const zhHK: UiStrings = {
+  ...zhCN,
+  network: 'LeviMC 網站導覽',
+  home: '首頁',
+  projects: '專案',
+  docs: '文檔',
+  tutorials: '教學',
+  faq: '問答',
+  mods: '模組',
+  community: '社群',
+  blog: '網誌',
+  about: '關於',
+  menu: '選單',
+  close: '關閉',
+  tagline: '面向 Minecraft 基岩版的開源模組生態——模組載入器、腳本引擎、套件安裝器、啟動器與官方模組。',
+  footerConnect: '聯絡我們',
+  email: '電郵',
+  supportUs: '支持我們',
+  theme: '主題',
+  themeLight: '淺色',
+  themeDark: '深色',
+  themeSystem: '跟隨系統',
+  themeAuto: '自動',
+  switchTheme: '切換主題',
+  language: '語言',
+  skipToContent: '跳到正文',
+  search: '搜尋',
+  searchPlaceholder: '搜尋 LeviMC…',
+  searchNoResults: '找不到結果：',
+  searchLoading: '正在載入搜尋索引…',
+  searchNavigate: '切換',
+  searchSelect: '開啟',
+  searchClose: '關閉',
+  onThisPage: '本頁目錄',
+  previous: '上一頁',
+  next: '下一頁',
+  editPage: '在 GitHub 上編輯此頁',
+  lastUpdated: '最後更新於',
+  backToTop: '返回頂部',
+  sidebarNav: '章節導覽',
+  mainNav: '主導覽',
+  notFoundTitle: '這個頁面走失了',
+  notFoundText: '指南針在原地打轉——你要找的頁面不存在或已被移動。',
+  goHome: '返回文檔首頁',
+  copyCode: '複製程式碼',
+  copied: '已複製！',
+  external: '在新分頁中開啟',
+  modsName: 'LeviMC 模組',
+  modsBlurb: 'Minecraft 基岩版的模組與外掛，可用 lip 一鍵安裝',
+  projectBlurbs: {
+    LeviLamina: 'Minecraft 基岩版模組載入器',
+    LegacyScriptEngine: '在 LeviLamina 上執行 LLSE 腳本外掛',
+    LeviStone: '在 LeviLamina 上執行 Endstone 外掛',
+    lip: '執行 LeviLamina 伺服器並管理它的套件',
+    LeviLauncher: 'Windows 與 Android 基岩版啟動器',
+    LeviOptimize: '為 LeviLamina 伺服器和用戶端優化效能',
+    LeviAntiCheat: '為 LeviLamina 伺服器提供反作弊',
+    MoreDimensions: '為基岩版伺服器加入自訂維度的 API',
+    BeDD: '以腳本驅動用戶端，測試模組',
+    bedboo: '兼容 mineflayer API 的基岩版機械人庫',
+  },
+  projectGroups: { core: '核心', mods: '官方模組' },
+  allRepositories: '在 GitHub 上查看全部儲存庫',
+};
+
+const es: UiStrings = {
+  network: 'Red LeviMC',
+  home: 'Inicio',
+  projects: 'Proyectos',
+  docs: 'Documentación',
+  tutorials: 'Tutoriales',
+  faq: 'FAQ',
+  mods: 'Mods',
+  community: 'Comunidad',
+  blog: 'Blog',
+  about: 'Acerca de',
+  github: 'GitHub',
+  menu: 'Menú',
+  close: 'Cerrar',
+  tagline: 'Modding de código abierto para Minecraft Bedrock Edition: cargador de mods, motor de scripts, instalador de paquetes, lanzadores y mods oficiales.',
+  footerConnect: 'Contacto',
+  email: 'Correo',
+  supportUs: 'Apóyanos',
+  rights: 'LeviMC',
+  theme: 'Tema',
+  themeLight: 'Claro',
+  themeDark: 'Oscuro',
+  themeSystem: 'Sistema',
+  themeAuto: 'Automático',
+  switchTheme: 'Cambiar tema',
+  language: 'Idioma',
+  skipToContent: 'Saltar al contenido',
+  search: 'Buscar',
+  searchPlaceholder: 'Buscar en LeviMC…',
+  searchNoResults: 'Sin resultados para',
+  searchLoading: 'Cargando el índice de búsqueda…',
+  searchNavigate: 'para moverte',
+  searchSelect: 'para abrir',
+  searchClose: 'para cerrar',
+  onThisPage: 'En esta página',
+  previous: 'Anterior',
+  next: 'Siguiente',
+  editPage: 'Editar esta página en GitHub',
+  lastUpdated: 'Última actualización',
+  backToTop: 'Volver arriba',
+  sidebarNav: 'Navegación de la sección',
+  mainNav: 'Navegación principal',
+  notFoundTitle: 'Esta página se ha perdido',
+  notFoundText: 'Tu brújula da vueltas: la página que buscas no existe o se ha movido.',
+  goHome: 'Volver al inicio de la documentación',
+  copyCode: 'Copiar código',
+  copied: '¡Copiado!',
+  external: 'se abre en una pestaña nueva',
+  modsName: 'LeviMC Mods',
+  modsBlurb: 'Mods y plugins para Minecraft Bedrock, listos para instalar con lip',
+  projectBlurbs: {
+    LeviLamina: 'Cargador de mods para Minecraft Bedrock Edition',
+    LegacyScriptEngine: 'Ejecuta plugins de script LLSE en LeviLamina',
+    LeviStone: 'Entorno para plugins de Endstone en LeviLamina',
+    lip: 'Ejecuta un servidor LeviLamina y gestiona sus paquetes',
+    LeviLauncher: 'Lanzador de Bedrock para Windows y Android',
+    LeviOptimize: 'Optimización del rendimiento para servidores y clientes LeviLamina',
+    LeviAntiCheat: 'Anticheat para servidores LeviLamina',
+    MoreDimensions: 'API para dimensiones personalizadas en servidores Bedrock',
+    BeDD: 'Entrada por script para probar mods',
+    bedboo: 'Bots de Bedrock con una API compatible con mineflayer',
+  },
+  projectGroups: { core: 'Núcleo', mods: 'Mods oficiales' },
+  allRepositories: 'Todos los repositorios en GitHub',
+};
+
+const ru: UiStrings = {
+  network: 'Сеть LeviMC',
+  home: 'Главная',
+  projects: 'Проекты',
+  docs: 'Документация',
+  tutorials: 'Руководства',
+  faq: 'ЧаВо',
+  mods: 'Моды',
+  community: 'Сообщество',
+  blog: 'Блог',
+  about: 'О нас',
+  github: 'GitHub',
+  menu: 'Меню',
+  close: 'Закрыть',
+  tagline: 'Моддинг Minecraft Bedrock Edition с открытым исходным кодом: загрузчик модов, скриптовый движок, установщик пакетов, лаунчеры и официальные моды.',
+  footerConnect: 'Связь',
+  email: 'Почта',
+  supportUs: 'Поддержать нас',
+  rights: 'LeviMC',
+  theme: 'Тема',
+  themeLight: 'Светлая',
+  themeDark: 'Тёмная',
+  themeSystem: 'Системная',
+  themeAuto: 'Авто',
+  switchTheme: 'Сменить тему',
+  language: 'Язык',
+  skipToContent: 'Перейти к содержимому',
+  search: 'Поиск',
+  searchPlaceholder: 'Поиск по LeviMC…',
+  searchNoResults: 'Ничего не найдено по запросу',
+  searchLoading: 'Загрузка поискового индекса…',
+  searchNavigate: 'навигация',
+  searchSelect: 'открыть',
+  searchClose: 'закрыть',
+  onThisPage: 'На этой странице',
+  previous: 'Назад',
+  next: 'Далее',
+  editPage: 'Редактировать на GitHub',
+  lastUpdated: 'Обновлено',
+  backToTop: 'Наверх',
+  sidebarNav: 'Навигация по разделу',
+  mainNav: 'Основная навигация',
+  notFoundTitle: 'Эта страница потерялась',
+  notFoundText: 'Компас крутится на месте: страница не существует или была перемещена.',
+  goHome: 'На главную документации',
+  copyCode: 'Копировать код',
+  copied: 'Скопировано!',
+  external: 'откроется в новой вкладке',
+  modsName: 'LeviMC Mods',
+  modsBlurb: 'Моды и плагины для Minecraft Bedrock, устанавливаются через lip',
+  projectBlurbs: {
+    LeviLamina: 'Загрузчик модов для Minecraft Bedrock Edition',
+    LegacyScriptEngine: 'Запуск скриптовых плагинов LLSE на LeviLamina',
+    LeviStone: 'Среда для плагинов Endstone на LeviLamina',
+    lip: 'Запускает сервер LeviLamina и управляет его пакетами',
+    LeviLauncher: 'Лаунчер Bedrock для Windows и Android',
+    LeviOptimize: 'Оптимизация производительности серверов и клиентов LeviLamina',
+    LeviAntiCheat: 'Античит для серверов LeviLamina',
+    MoreDimensions: 'API для пользовательских измерений на серверах Bedrock',
+    BeDD: 'Скриптовый ввод для тестов модов',
+    bedboo: 'Боты для Bedrock с API, совместимым с mineflayer',
+  },
+  projectGroups: { core: 'Ядро', mods: 'Официальные моды' },
+  allRepositories: 'Все репозитории на GitHub',
+};
+
+const de: UiStrings = {
+  network: 'LeviMC-Netzwerk',
+  home: 'Startseite',
+  projects: 'Projekte',
+  docs: 'Dokumentation',
+  tutorials: 'Tutorials',
+  faq: 'FAQ',
+  mods: 'Mods',
+  community: 'Community',
+  blog: 'Blog',
+  about: 'Über uns',
+  github: 'GitHub',
+  menu: 'Menü',
+  close: 'Schließen',
+  tagline: 'Open-Source-Modding für Minecraft Bedrock Edition – Mod-Loader, Skript-Engine, Paketinstaller, Launcher und offizielle Mods.',
+  footerConnect: 'Kontakt',
+  email: 'E-Mail',
+  supportUs: 'Unterstütze uns',
+  rights: 'LeviMC',
+  theme: 'Design',
+  themeLight: 'Hell',
+  themeDark: 'Dunkel',
+  themeSystem: 'System',
+  themeAuto: 'Automatisch',
+  switchTheme: 'Design wechseln',
+  language: 'Sprache',
+  skipToContent: 'Zum Inhalt springen',
+  search: 'Suche',
+  searchPlaceholder: 'LeviMC durchsuchen…',
+  searchNoResults: 'Keine Ergebnisse für',
+  searchLoading: 'Suchindex wird geladen…',
+  searchNavigate: 'navigieren',
+  searchSelect: 'öffnen',
+  searchClose: 'schließen',
+  onThisPage: 'Auf dieser Seite',
+  previous: 'Zurück',
+  next: 'Weiter',
+  editPage: 'Diese Seite auf GitHub bearbeiten',
+  lastUpdated: 'Zuletzt aktualisiert',
+  backToTop: 'Nach oben',
+  sidebarNav: 'Abschnittsnavigation',
+  mainNav: 'Hauptnavigation',
+  notFoundTitle: 'Diese Seite hat sich verlaufen',
+  notFoundText: 'Dein Kompass dreht sich – die gesuchte Seite existiert nicht oder wurde verschoben.',
+  goHome: 'Zur Startseite der Dokumentation',
+  copyCode: 'Code kopieren',
+  copied: 'Kopiert!',
+  external: 'öffnet in einem neuen Tab',
+  modsName: 'LeviMC Mods',
+  modsBlurb: 'Mods und Plugins für Minecraft Bedrock, installierbar mit lip',
+  projectBlurbs: {
+    LeviLamina: 'Mod-Loader für Minecraft Bedrock Edition',
+    LegacyScriptEngine: 'Führt LLSE-Skript-Plugins auf LeviLamina aus',
+    LeviStone: 'Laufzeit für Endstone-Plugins auf LeviLamina',
+    lip: 'Betreibt einen LeviLamina-Server und verwaltet seine Pakete',
+    LeviLauncher: 'Bedrock-Launcher für Windows und Android',
+    LeviOptimize: 'Leistungsoptimierung für LeviLamina-Server und -Clients',
+    LeviAntiCheat: 'Anti-Cheat für LeviLamina-Server',
+    MoreDimensions: 'API für eigene Dimensionen auf Bedrock-Servern',
+    BeDD: 'Skriptgesteuerte Eingaben für Mod-Tests',
+    bedboo: 'Bedrock-Bots mit einer mineflayer-kompatiblen API',
+  },
+  projectGroups: { core: 'Kern', mods: 'Offizielle Mods' },
+  allRepositories: 'Alle Repositorys auf GitHub',
+};
+
+const ja: UiStrings = {
+  network: 'LeviMC ネットワーク',
+  home: 'ホーム',
+  projects: 'プロジェクト',
+  docs: 'ドキュメント',
+  tutorials: 'チュートリアル',
+  faq: 'FAQ',
+  mods: 'MOD',
+  community: 'コミュニティ',
+  blog: 'ブログ',
+  about: '概要',
+  github: 'GitHub',
+  menu: 'メニュー',
+  close: '閉じる',
+  tagline: 'Minecraft 統合版のためのオープンソース MOD 環境 — MOD ローダー、スクリプトエンジン、パッケージインストーラー、ランチャー、公式 MOD。',
+  footerConnect: 'つながる',
+  email: 'メール',
+  supportUs: '支援する',
+  rights: 'LeviMC',
+  theme: 'テーマ',
+  themeLight: 'ライト',
+  themeDark: 'ダーク',
+  themeSystem: 'システム',
+  themeAuto: '自動',
+  switchTheme: 'テーマを切り替え',
+  language: '言語',
+  skipToContent: '本文へスキップ',
+  search: '検索',
+  searchPlaceholder: 'LeviMC を検索…',
+  searchNoResults: '検索結果なし：',
+  searchLoading: '検索インデックスを読み込み中…',
+  searchNavigate: '移動',
+  searchSelect: '開く',
+  searchClose: '閉じる',
+  onThisPage: 'このページの内容',
+  previous: '前へ',
+  next: '次へ',
+  editPage: 'GitHub でこのページを編集',
+  lastUpdated: '最終更新',
+  backToTop: 'トップへ戻る',
+  sidebarNav: 'セクションナビゲーション',
+  mainNav: 'メインナビゲーション',
+  notFoundTitle: 'このページは迷子になりました',
+  notFoundText: 'コンパスがくるくる回っています。お探しのページは存在しないか、移動しました。',
+  goHome: 'ドキュメントのホームへ',
+  copyCode: 'コードをコピー',
+  copied: 'コピーしました！',
+  external: '新しいタブで開きます',
+  modsName: 'LeviMC Mods',
+  modsBlurb: 'Minecraft 統合版用の MOD とプラグイン（lip でインストール）',
+  projectBlurbs: {
+    LeviLamina: 'Minecraft 統合版用 MOD ローダー',
+    LegacyScriptEngine: 'LeviLamina で LLSE スクリプトプラグインを実行',
+    LeviStone: 'LeviLamina で Endstone プラグインを実行',
+    lip: 'LeviLamina サーバーを動かし、そのパッケージを管理',
+    LeviLauncher: 'Windows・Android 向け統合版ランチャー',
+    LeviOptimize: 'LeviLamina サーバーとクライアントのパフォーマンス最適化',
+    LeviAntiCheat: 'LeviLamina サーバー向けアンチチート',
+    MoreDimensions: '統合版サーバーにカスタムディメンションを追加する API',
+    BeDD: 'スクリプトでクライアントを操作して MOD をテスト',
+    bedboo: 'mineflayer 互換 API を備えた統合版ボットライブラリ',
+  },
+  projectGroups: { core: 'コア', mods: '公式 MOD' },
+  allRepositories: 'GitHub のすべてのリポジトリ',
+};
+
+const ko: UiStrings = {
+  network: 'LeviMC 네트워크',
+  home: '홈',
+  projects: '프로젝트',
+  docs: '문서',
+  tutorials: '튜토리얼',
+  faq: 'FAQ',
+  mods: '모드',
+  community: '커뮤니티',
+  blog: '블로그',
+  about: '소개',
+  github: 'GitHub',
+  menu: '메뉴',
+  close: '닫기',
+  tagline: 'Minecraft 베드락 에디션을 위한 오픈 소스 모딩 — 모드 로더, 스크립트 엔진, 패키지 설치 도구, 런처, 공식 모드.',
+  footerConnect: '연결',
+  email: '이메일',
+  supportUs: '후원하기',
+  rights: 'LeviMC',
+  theme: '테마',
+  themeLight: '라이트',
+  themeDark: '다크',
+  themeSystem: '시스템',
+  themeAuto: '자동',
+  switchTheme: '테마 전환',
+  language: '언어',
+  skipToContent: '본문으로 건너뛰기',
+  search: '검색',
+  searchPlaceholder: 'LeviMC 검색…',
+  searchNoResults: '검색 결과 없음:',
+  searchLoading: '검색 색인을 불러오는 중…',
+  searchNavigate: '이동',
+  searchSelect: '열기',
+  searchClose: '닫기',
+  onThisPage: '이 페이지의 내용',
+  previous: '이전',
+  next: '다음',
+  editPage: 'GitHub에서 이 페이지 편집',
+  lastUpdated: '마지막 업데이트',
+  backToTop: '맨 위로',
+  sidebarNav: '섹션 탐색',
+  mainNav: '주 탐색',
+  notFoundTitle: '이 페이지는 길을 잃었습니다',
+  notFoundText: '나침반이 빙글빙글 돌고 있어요. 찾는 페이지가 없거나 이동되었습니다.',
+  goHome: '문서 홈으로',
+  copyCode: '코드 복사',
+  copied: '복사됨!',
+  external: '새 탭에서 열림',
+  modsName: 'LeviMC Mods',
+  modsBlurb: 'lip으로 설치하는 Minecraft 베드락용 모드와 플러그인',
+  projectBlurbs: {
+    LeviLamina: 'Minecraft 베드락 에디션용 모드 로더',
+    LegacyScriptEngine: 'LeviLamina에서 LLSE 스크립트 플러그인 실행',
+    LeviStone: 'LeviLamina에서 Endstone 플러그인 실행',
+    lip: 'LeviLamina 서버를 실행하고 패키지를 관리',
+    LeviLauncher: 'Windows 및 Android용 베드락 런처',
+    LeviOptimize: 'LeviLamina 서버와 클라이언트 성능 최적화',
+    LeviAntiCheat: 'LeviLamina 서버용 안티치트',
+    MoreDimensions: '베드락 서버에 사용자 지정 차원을 추가하는 API',
+    BeDD: '스크립트로 클라이언트를 조작해 모드 테스트',
+    bedboo: 'mineflayer 호환 API를 갖춘 베드락 봇 라이브러리',
+  },
+  projectGroups: { core: '핵심', mods: '공식 모드' },
+  allRepositories: 'GitHub의 모든 저장소',
+};
+
+const fr: UiStrings = {
+  network: 'Réseau LeviMC',
+  home: 'Accueil',
+  projects: 'Projets',
+  docs: 'Documentation',
+  tutorials: 'Tutoriels',
+  faq: 'FAQ',
+  mods: 'Mods',
+  community: 'Communauté',
+  blog: 'Blog',
+  about: 'À propos',
+  github: 'GitHub',
+  menu: 'Menu',
+  close: 'Fermer',
+  tagline: 'Modding open source pour Minecraft Bedrock Edition : chargeur de mods, moteur de scripts, installateur de paquets, lanceurs et mods officiels.',
+  footerConnect: 'Nous suivre',
+  email: 'E-mail',
+  supportUs: 'Nous soutenir',
+  rights: 'LeviMC',
+  theme: 'Thème',
+  themeLight: 'Clair',
+  themeDark: 'Sombre',
+  themeSystem: 'Système',
+  themeAuto: 'Automatique',
+  switchTheme: 'Changer de thème',
+  language: 'Langue',
+  skipToContent: 'Aller au contenu',
+  search: 'Rechercher',
+  searchPlaceholder: 'Rechercher sur LeviMC…',
+  searchNoResults: 'Aucun résultat pour',
+  searchLoading: 'Chargement de l’index de recherche…',
+  searchNavigate: 'pour naviguer',
+  searchSelect: 'pour ouvrir',
+  searchClose: 'pour fermer',
+  onThisPage: 'Sur cette page',
+  previous: 'Précédent',
+  next: 'Suivant',
+  editPage: 'Modifier cette page sur GitHub',
+  lastUpdated: 'Dernière mise à jour',
+  backToTop: 'Retour en haut',
+  sidebarNav: 'Navigation de la section',
+  mainNav: 'Navigation principale',
+  notFoundTitle: 'Cette page s’est égarée',
+  notFoundText: 'Votre boussole tourne en rond : la page recherchée n’existe pas ou a été déplacée.',
+  goHome: 'Retour à l’accueil de la documentation',
+  copyCode: 'Copier le code',
+  copied: 'Copié !',
+  external: 's’ouvre dans un nouvel onglet',
+  modsName: 'LeviMC Mods',
+  modsBlurb: 'Mods et plugins pour Minecraft Bedrock, à installer avec lip',
+  projectBlurbs: {
+    LeviLamina: 'Chargeur de mods pour Minecraft Bedrock Edition',
+    LegacyScriptEngine: 'Exécute les plugins de script LLSE sur LeviLamina',
+    LeviStone: 'Environnement pour les plugins Endstone sur LeviLamina',
+    lip: 'Lance un serveur LeviLamina et gère ses paquets',
+    LeviLauncher: 'Lanceur Bedrock pour Windows et Android',
+    LeviOptimize: 'Optimisation des performances des serveurs et clients LeviLamina',
+    LeviAntiCheat: 'Anti-triche pour les serveurs LeviLamina',
+    MoreDimensions: 'API pour des dimensions personnalisées sur les serveurs Bedrock',
+    BeDD: 'Entrées scriptées pour tester les mods',
+    bedboo: 'Des bots Bedrock avec une API compatible mineflayer',
+  },
+  projectGroups: { core: 'Noyau', mods: 'Mods officiels' },
+  allRepositories: 'Tous les dépôts sur GitHub',
+};
+
+export const UI_STRINGS: Record<UiLocale, UiStrings> = {
+  en,
+  'zh-CN': zhCN,
+  'zh-HK': zhHK,
+  es,
+  ru,
+  de,
+  ja,
+  ko,
+  fr,
+};
+
+/**
+ * Map any BCP-47 tag (or a site locale code such as "zh", "zh-TW", "es-ES") to one of the 9 UI locales.
+ * Traditional Chinese variants (zh-HK, zh-TW, zh-MO, zh-Hant) → zh-HK; other zh → zh-CN; else primary subtag.
+ */
+export function resolveUiLocale(tag: string | undefined | null): UiLocale {
+  if (!tag) return 'en';
+  const t = tag.toLowerCase();
+  if (t.startsWith('zh')) {
+    return /^zh[-_](hk|tw|mo|hant)/.test(t) ? 'zh-HK' : 'zh-CN';
+  }
+  const primary = t.split(/[-_]/)[0];
+  const hit = UI_LOCALES.find((l) => l === primary);
+  return hit ?? 'en';
+}
+
+export function uiStrings(tag: string | undefined | null, overrides?: Partial<UiStrings>): UiStrings {
+  const base = UI_STRINGS[resolveUiLocale(tag)];
+  return overrides ? { ...base, ...overrides, projectBlurbs: { ...base.projectBlurbs, ...overrides.projectBlurbs }, projectGroups: { ...base.projectGroups, ...overrides.projectGroups } } : base;
+}
+
+/** Native names of the UI locales (the chrome's language menu lists each in its own language). */
+export const UI_LOCALE_NAMES: Record<UiLocale, string> = {
+  en: 'English',
+  'zh-CN': '简体中文',
+  'zh-HK': '繁體中文',
+  es: 'Español',
+  ru: 'Русский',
+  de: 'Deutsch',
+  ja: '日本語',
+  ko: '한국어',
+  fr: 'Français',
+};
+
+/**
+ * The kit's name of a language (UI_LOCALE_NAMES), or undefined when the tag is none of the UI locales: the bar's
+ * language menu names every language the same way on every LeviMC site ("zh", "zh-CN" → 简体中文).
+ */
+export function uiLocaleName(tag: string): string | undefined {
+  const t = tag.toLowerCase();
+  const loc = resolveUiLocale(t);
+  return loc !== 'en' || t.split(/[-_]/)[0] === 'en' ? UI_LOCALE_NAMES[loc] : undefined;
+}
+

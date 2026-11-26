@@ -1,0 +1,117 @@
+# Every hour, what levimc.org is built from outside this repository:
+#   1. the release Mojang's download API names now joins src/versions/versions.json (src/versions/update.mjs);
+#   2. repositories GitHub no longer serves leave content/mods/repos.txt (scripts/sources.mjs);
+#   3. 1 and 2 are committed to main;
+#   4. a deploy is started when that commit was made or the sources' fingerprint (every mod's version tags, LeviLamina's
+#      and BeDD's commits; scripts/sources.mjs) is new: deploy.yml runs on nothing else but pushes and this. A push made
+#      with the workflow token starts no workflows, so the deploy is started by hand (workflow_dispatch is the exception);
+#   5. mod repositories repos.txt does not name yet are proposed, a pull request each (scripts/mods/discover.mjs).
+#      Merging one lists the repository at the deploy the merge starts; closing one keeps it out for good. Needs
+#      "Allow GitHub Actions to create and approve pull requests" (Settings → Actions → General). Pull requests the
+#      workflow token opens start no workflows of their own.
+name: Discover
+
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Only log what it would change
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: discover
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    env:
+      DRY_RUN: ${{ inputs.dry-run && '--dry-run' || '' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      # sources.mjs and discover.mjs read with the site's own code (src/mods/), which needs its packages.
+      - run: npm ci
+
+      - id: versions
+        run: |
+          added=$(node src/versions/update.mjs $DRY_RUN)
+          echo "$added"
+          { echo "added<<EOF"; echo "$added"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+
+      - id: sources
+        run: node scripts/sources.mjs $DRY_RUN >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - id: commit
+        if: ${{ !inputs.dry-run }}
+        env:
+          ADDED: ${{ steps.versions.outputs.added }}
+          REMOVED: ${{ steps.sources.outputs.removed }}
+        run: |
+          git add src/versions/versions.json content/mods/repos.txt
+          if git diff --cached --quiet; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          subject=""
+          if [ -n "$ADDED" ]; then subject="versions: add $(echo "$ADDED" | awk '{print $2}' | sort -u | paste -sd, -)"; fi
+          if [ -n "$REMOVED" ]; then subject="${subject:+$subject; }LeviMC Mods: remove ${REMOVED//,/, } (gone from GitHub)"; fi
+          message=(-m "$subject")
+          if [ -n "$ADDED" ]; then message+=(-m "$ADDED"); fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q "${message[@]}"
+          # main may have moved since the checkout
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q origin HEAD:main && break
+            sleep 5
+          done
+          git diff --quiet origin/main -- src/versions/versions.json content/mods/repos.txt
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      # The fingerprint the last deploy started here was made for: a cache entry named after it.
+      - id: seen
+        if: ${{ !inputs.dry-run && steps.sources.outputs.fingerprint != '' }}
+        uses: actions/cache/restore@v6
+        with:
+          path: .cache/sources
+          key: sources-${{ steps.sources.outputs.fingerprint }}
+          lookup-only: true
+
+      - if: ${{ !inputs.dry-run && (steps.commit.outputs.pushed == 'true' || (steps.sources.outputs.fingerprint != '' && steps.seen.outputs.cache-hit != 'true')) }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml -R "$GITHUB_REPOSITORY" --ref main
+
+      - if: ${{ !inputs.dry-run && steps.sources.outputs.fingerprint != '' && steps.seen.outputs.cache-hit != 'true' }}
+        env:
+          FINGERPRINT: ${{ steps.sources.outputs.fingerprint }}
+        run: mkdir -p .cache/sources && echo "$FINGERPRINT" > .cache/sources/fingerprint
+
+      - if: ${{ !inputs.dry-run && steps.sources.outputs.fingerprint != '' && steps.seen.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .cache/sources
+          key: sources-${{ steps.sources.outputs.fingerprint }}
+
+      - run: node scripts/mods/discover.mjs $DRY_RUN
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Optional: a personal token (no scopes needed, public code search only). The workflow token's code search
+          # limit is shared beyond this workflow and often answers the first request with HTTP 429.
+          SEARCH_TOKEN: ${{ secrets.MODS_SEARCH_TOKEN }}

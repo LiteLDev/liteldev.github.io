@@ -1,0 +1,201 @@
+// LeviLamina docs, built from this folder by levimc.org's deploy (content/README.md) since 2026-11-16, before in
+// LiteLDev/LeviLamina (docs/main/). English at /LeviLamina/, Simplified Chinese at /zh-Hans/LeviLamina/, Traditional
+// Chinese at /zh-Hant/LeviLamina/ (converted from it): levimc.org's one scheme, the language first. The URLs before
+// (/LeviLamina/zh-Hans/…, /LeviLamina/zh/…, /LeviLamina/zh-Hant/…) redirect.
+// The pages are in pages/ (x.md = English, x.zh.md = Chinese). Register new pages in `nav` below
+// and their Chinese nav labels in `navTranslations.zh`. See src/kit/README.md for every option.
+// The C++ reference (/LeviLamina/api/) is Doxygen over LeviLamina's headers, made by the deploy (doxygen/build.sh).
+import { defineDocsConfig } from '../../src/kit/docs/node/config.ts';
+
+// Pages that left this site keep answering at every URL they had: English, zh-Hans/, the former zh/ and zh-Hant/
+// (the localized ones also at /zh-Hans/LeviLamina/… and /zh-Hant/LeviLamina/…).
+const SITE = 'https://levimc.org/';
+const BLOB = 'https://github.com/LiteLDev/LeviLamina/blob/main/';
+/** A tutorial's URL per locale of this site (Simplified and Traditional Chinese have their own), language first. */
+const tutorial = (path: string) => ({
+  en: `${SITE}tutorials/${path}`,
+  zhHans: `${SITE}zh-Hans/tutorials/${path}`,
+  zhHant: `${SITE}zh-Hant/tutorials/${path}`,
+});
+/** A page of the FAQ (levimc.org/faq/), which has the same locales. */
+const faq = (path: string) => ({ en: `${SITE}faq/${path}`, zhHans: `${SITE}zh-Hans/faq/${path}`, zhHant: `${SITE}zh-Hant/faq/${path}` });
+/** A contributor guide in the repository (docs/contributing/): English, and the Chinese text beside it. */
+const repoFile = (file: string) => ({ en: BLOB + file, zhHans: BLOB + file.replace(/\.md$/, '.zh.md'), zhHant: BLOB + file.replace(/\.md$/, '.zh.md') });
+function moved(pages: Record<string, { en: string; zhHans: string; zhHant: string }>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [from, to] of Object.entries(pages)) {
+    out[from] = to.en;
+    out[`zh-Hans/${from}`] = to.zhHans;
+    out[`zh/${from}`] = to.zhHans;
+    out[`zh-Hant/${from}`] = to.zhHant;
+  }
+  return out;
+}
+
+export default defineDocsConfig({
+  base: '/LeviLamina/',
+  // Header brand; page titles use the kit default ':title - :site Docs' ("Troubleshooting - LeviLamina Docs").
+  title: 'LeviLamina',
+  logo: 'logo.svg',
+  favicon: 'favicon.ico',
+  project: 'LeviLamina',
+  repo: 'https://github.com/LiteLDev/LeviLamina',
+  // the sources live here now
+  editLink: 'https://github.com/LiteLDev/liteldev.github.io/edit/main/content/LeviLamina/pages/:path',
+  contentDir: 'pages',
+  hostname: 'https://levimc.org',
+  sitemap: { hostname: 'https://levimc.org' },
+  i18n: {
+    mode: 'suffix',
+    defaultLocale: 'en',
+    localeFirst: true,
+    locales: [
+      { code: 'en', label: 'English', lang: 'en', prefix: '' },
+      // Simplified Chinese at /zh-Hans/LeviLamina/ (sources stay *.zh.md); /LeviLamina/zh-Hans/… and the former
+      // /LeviLamina/zh/… redirect to it
+      { code: 'zh', label: '简体中文', lang: 'zh-Hans', prefix: 'zh-Hans/', formerPrefixes: ['zh-Hans/', 'zh/'] },
+      // Traditional Chinese, generated from the zh pages (levimc-kit convertFrom)
+      { code: 'zh-Hant', label: '繁體中文', lang: 'zh-Hant', prefix: 'zh-Hant/', convertFrom: 'zh', formerPrefixes: ['zh-Hant/'] },
+    ],
+  },
+  urlStyle: 'directory',
+  slug: 'pymdownx',
+  markdown: { compat: 'python-markdown', lineNumbers: true, codeTitle: 'pygments' },
+  lastUpdated: true,
+  sidebar: 'tabs',
+  // The LeviMC navigation model (src/kit/README.md "Navigation model"): every top-level entry is a section, i.e. a tab of
+  // the site column and the sidebar tree of its pages. Every LeviMC project has the same five, in this order:
+  // Overview (the home page alone: what LeviLamina is, with a small mod as the example; no pages below it), Install
+  // (one page: LeviLamina on a server, in the game and in a mod project), Guides
+  // (how to use one part of the API, step by step), Concepts (how LeviLamina works) and Reference (the complete
+  // interface: the C++ reference, the API by topic, the Android native mods API, the supported versions, the usage
+  // guidelines). Step-by-step tutorials (install a server, play with mods, your first mod) live at
+  // https://levimc.org/tutorials/; questions and answers are at https://levimc.org/faq/. Sections with up to 24 links
+  // open every group; longer ones (Reference) only the group holding the current page.
+  nav: [
+    { Overview: 'index.md' },
+    // Install (kit 2.32): the second section on every project's docs, one page like Overview: what you need, how to
+    // install, check, update and get other versions.
+    { Install: 'install.md' },
+    {
+      Guides: [
+        'developer_guides/how_to_guides/event_guide.md',
+        'developer_guides/how_to_guides/interface_export_guide.md',
+        'developer_guides/how_to_guides/data_driven_ui_guide.md',
+        'developer_guides/how_to_guides/form_guide.md',
+        'developer_guides/how_to_guides/hook_guide.md',
+        'developer_guides/how_to_guides/i18n_guide.md',
+        'developer_guides/how_to_guides/item_guide.md',
+        'developer_guides/how_to_guides/command_guide.md',
+        'developer_guides/how_to_guides/coro_guide.md',
+      ],
+    },
+    {
+      Concepts: [
+        'concepts/mod_lifecycle.md',
+        'concepts/events_and_hooks.md',
+        { Architecture: 'developer_guides/architecture.md' },
+      ],
+    },
+    {
+      Reference: [
+        // The Doxygen C++ reference, first: it makes the section's link /LeviLamina/api/, so the Doxygen header (made
+        // by levimc.org's deploy after this build, into dist/LeviLamina/api/ from api/Doxyfile, its header generated
+        // from dist/LeviLamina/_kit/nav.json) shows this section as the current one. Opened in place, not a new tab.
+        { 'C++ Reference': 'https://levimc.org/LeviLamina/api/' },
+        // LeviLamina's API by topic (URLs api_reference/…), with examples.
+        {
+          API: [
+            { Overview: 'api_reference/index.md' },
+            { Base: 'api_reference/base.md' },
+            { Chrono: 'api_reference/chrono.md' },
+            { Command: 'api_reference/command.md' },
+            { Config: 'api_reference/config.md' },
+            { Coroutine: 'api_reference/coro.md' },
+            { Data: 'api_reference/data.md' },
+            { 'Data-driven UI': 'api_reference/data_driven_ui.md' },
+            { Event: 'api_reference/event.md' },
+            { Expected: 'api_reference/expected.md' },
+            { Form: 'api_reference/form.md' },
+            { I18n: 'api_reference/i18n.md' },
+            { 'IO & Logger': 'api_reference/io.md' },
+            { 'Memory & Hook': 'api_reference/memory.md' },
+            { Mod: 'api_reference/mod.md' },
+            { Network: 'api_reference/network.md' },
+            { Reflection: 'api_reference/reflection.md' },
+            { 'Reflection (Advanced)': 'api_reference/reflection_advanced.md' },
+            { Service: 'api_reference/service.md' },
+            { Thread: 'api_reference/thread.md' },
+            { Utils: 'api_reference/utils.md' },
+            { 'Input (Client)': 'api_reference/input.md' },
+          ],
+        },
+        // Native mods for Minecraft on Android: loaded by LeviLauncher's Android version through the Preloader
+        // SDK, not by LeviLamina (the tutorial is develop/first-android-mod/); titles are the pages' own.
+        {
+          'Android Native Mods API': [
+            'developer_guides/android/api/mod.md',
+            'developer_guides/android/api/mod_menu.md',
+            'developer_guides/android/api/config.md',
+            'developer_guides/android/api/input.md',
+            'developer_guides/android/api/hook.md',
+            'developer_guides/android/api/types_and_macros.md',
+          ],
+        },
+        { 'Supported Versions': 'versions.md' },
+        { 'Usage Guidelines': 'common_guides/usage_guidelines.md' },
+      ],
+    },
+  ],
+  // Moved pages. Tutorials went to levimc.org/tutorials/ (each locale to the tutorial's own locale); the contributor
+  // guides (building LeviLamina, the C++ style) went to docs/contributing/ in the repository (see CONTRIBUTING.md).
+  redirects: moved({
+    'user_guides/install/': tutorial('server/first-server/'),
+    'user_guides/install_on_docker/': tutorial('server/docker/'),
+    'user_guides/install_on_client/': tutorial('play/play-with-mods/'),
+    'user_guides/configure_server_under_nat/': tutorial('server/let-friends-join/'),
+    'developer_guides/tutorials/create_your_first_mod/': tutorial('develop/first-levilamina-mod/'),
+    'developer_guides/android/': tutorial('develop/first-android-mod/'),
+    'developer_guides/how_to_guides/build_guide/': repoFile('docs/contributing/building.md'),
+    'maintainer_guides/cpp_style_guide/': repoFile('docs/contributing/cpp_style.md'),
+    // The FAQ and the error codes moved to levimc.org/faq/, with the questions of the other LeviMC projects.
+    'developer_guides/faq/': faq('develop/levilamina/basics/'),
+    'user_guides/troubleshooting/': faq('server/levilamina/errors/'),
+  }),
+  navTranslations: {
+    zh: {
+      Overview: '概览',
+      Install: '安装',
+      Guides: '指南',
+      Concepts: '概念',
+      Reference: '参考',
+      Architecture: '项目架构',
+      API: 'API',
+      'C++ Reference': 'C++ 参考',
+      'Android Native Mods API': 'Android 原生模组 API',
+      'Usage Guidelines': '使用指南',
+      Base: '基础类型',
+      Chrono: '游戏时间',
+      Command: '命令系统',
+      Config: '配置系统',
+      Coroutine: '协程',
+      Data: '数据结构',
+      'Data-driven UI': '数据驱动 UI',
+      Event: '事件系统',
+      Expected: '错误处理',
+      Form: '表单 UI',
+      I18n: '国际化',
+      'IO & Logger': '输入输出与日志',
+      'Memory & Hook': '内存与钩子',
+      Mod: '模组系统',
+      Network: '网络',
+      Reflection: '反射',
+      'Reflection (Advanced)': '反射（进阶）',
+      Service: '服务系统',
+      Thread: '线程工具',
+      Utils: '工具函数',
+      'Input (Client)': '输入系统（客户端）',
+      'Supported Versions': '支持的版本',
+    },
+  },
+});

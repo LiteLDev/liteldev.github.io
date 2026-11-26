@@ -1,0 +1,106 @@
+import { useEffect, useRef, useState } from 'react';
+import type { HeroData, PageData, RouteMeta } from '../../shared/types';
+import { preferredPlatform, type DevicePlatform } from '../../shared/platform';
+import { langOf, site } from '../data';
+import { KitLink } from '../components/KitLink';
+import { SiteNav } from '../components/SiteNav';
+import { useContentEnhancements } from '../enhance';
+import { PaintedHero } from '../../../components/PaintedHero';
+import { Card } from '../../../components/Card';
+import { PIXEL_ICONS, type PixelIconName } from '../../../components/pixel-icons';
+import type { UiStrings } from '../../../components/i18n';
+
+const FEATURE_ICONS: PixelIconName[] = ['map', 'chest', 'emerald', 'pickaxe', 'compass', 'diamond', 'bookQuill', 'torch', 'grass'];
+
+type HeroActions = NonNullable<HeroData['actions']>;
+
+/** The hero actions for a visitor on `platform`: its actions first and brand, other platforms' alt (see HeroData). */
+function actionsForPlatform(actions: HeroActions, platform: DevicePlatform | undefined): HeroActions {
+  if (!platform || !actions.some((a) => a.platform?.toLowerCase() === platform)) return actions;
+  const mine = actions.filter((a) => a.platform?.toLowerCase() === platform).map((a) => ({ ...a, theme: 'brand' as const }));
+  const rest = actions.filter((a) => a.platform?.toLowerCase() !== platform).map((a) => (a.platform ? { ...a, theme: 'alt' as const } : a));
+  return [...mine, ...rest];
+}
+
+export function HomeLayout({ route, page, t }: { route: RouteMeta; page: PageData; t: UiStrings }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  useContentEnhancements(contentRef, route.page);
+  const hero = page.hero ?? {};
+  const features = page.features ?? [];
+  // prerendered with the author's order; the visitor's platform (?platform=, earlier choice, device) only in the browser
+  const [platform, setPlatform] = useState<DevicePlatform>();
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- the visitor's platform is known in the browser only
+  useEffect(() => setPlatform(preferredPlatform()), []);
+  // kit 2.22.1: the site's column starts under the banner and stays hidden while any of the banner is on screen
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [heroInView, setHeroInView] = useState(true);
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    // gone = its bottom is above the sticky LeviMC bar's bottom (what the bar covers is not on screen either)
+    const update = () => {
+      const bar = document.querySelector('[data-kit-globalbar]')?.getBoundingClientRect().bottom ?? 0;
+      setHeroInView(el.getBoundingClientRect().bottom > Math.max(0, bar));
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+  return (
+    <main id="kit-main" className="kit-home" tabIndex={-1}>
+      <div ref={heroRef} className="kit-home-hero">
+        <PaintedHero
+          eyebrow={site.project && /^[\x00-\x7f]+$/.test(site.project) ? `LeviMC · Docs` : undefined}
+          name={hero.name ?? site.title}
+          text={hero.text}
+          tagline={hero.tagline}
+          image={hero.image ? { src: hero.image.src, alt: hero.image.alt ?? '' } : undefined}
+          actions={actionsForPlatform(hero.actions ?? [], platform)}
+          linkComponent={KitLink}
+        />
+      </div>
+      <div className="kit-doc-layout kit-home-layout" data-sidebar="" data-hero-in-view={heroInView ? '' : undefined}>
+        <div className="kit-doc-sidebar" inert={heroInView ? true : undefined}>
+          <div className="kit-doc-sidebar-inner">
+            <SiteNav route={route} locale={route.locale} t={t} />
+          </div>
+        </div>
+        <div className="kit-home-body">
+      {features.length ? (
+        <section className="kit-home-features" aria-label={hero.name ?? site.title}>
+          <div className="kit-home-features-grid">
+            {features.map((f, i) => {
+              const icon = (f.icon && f.icon in PIXEL_ICONS ? f.icon : FEATURE_ICONS[i % FEATURE_ICONS.length]) as PixelIconName;
+              return (
+                <Card
+                  key={i}
+                  icon={f.icon && !(f.icon in PIXEL_ICONS) ? <span className="kit-feature-emoji">{f.icon}</span> : icon}
+                  title={f.title}
+                  description={f.details}
+                  href={f.link}
+                  external={f.external}
+                  linkComponent={KitLink}
+                />
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+      {page.html.trim() ? (
+        <div className="kit-home-content">
+          <article lang={route.fallback ? langOf(site.defaultLocale) : langOf(route.locale)}>
+            <div ref={contentRef} className="kit-prose" data-doc-content="" dangerouslySetInnerHTML={{ __html: page.html }} />
+          </article>
+        </div>
+      ) : (
+        <div ref={contentRef} data-doc-content="" hidden />
+      )}
+        </div>
+      </div>
+    </main>
+  );
+}

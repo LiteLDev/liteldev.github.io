@@ -1,0 +1,163 @@
+# 💻 服务端设置 API
+
+以下 API 提供了自定义部分服务器设置的接口。
+
+### 获取服务器版本号
+
+`mc.getBDSVersion()`
+
+- 返回值：服务端版本号字符串，格式形如`v1.17.10`
+- 返回值类型：`String`
+
+
+
+### 获取服务器协议版本
+
+`mc.getServerProtocolVersion()`
+
+- 返回值：服务端协议版本
+- 返回值类型：`Number`
+
+
+
+### 获取服务器MOTD字符串
+
+!!! warning
+    此函数仅在0.19.1及以后版本可用
+
+`mc.getMotd()`
+
+- 返回值：当前服务器MOTD字符串
+- 返回值类型：`String`
+
+
+
+### 设置服务器MOTD字符串  
+
+`mc.setMotd(motd)`
+
+- 参数：
+  - motd : `String`  
+    目标MOTD字符串  
+- 返回值：是否设置成功
+- 返回值类型：`Boolean`
+
+
+
+### 设置服务器最大玩家数  
+
+`mc.setMaxPlayers(num)`
+
+- 参数：
+  - num : `Number`  
+    最大玩家数  
+- 返回值：是否设置成功
+- 返回值类型：`Boolean`
+
+
+
+### 获取在线玩家数量
+
+!!! warning
+    此函数仅在0.19.1及以后版本可用
+
+`mc.getOnlinePlayerNum([ignoreSimulatedPlayer])`
+
+- 参数：
+  - ignoreSimulatedPlayer : `Boolean` = `false`  
+    是否忽略模拟玩家
+- 返回值：当前在线玩家数量
+- 返回值类型：`Number`
+
+
+
+### 获取服务器最大玩家数
+
+!!! warning
+    此函数仅在0.19.1及以后版本可用
+
+`mc.getMaxNumPlayers()`
+
+- 返回值：当前服务器最大玩家数
+- 返回值类型：`Number`
+
+
+
+### 获取服务器游戏时间  
+
+`mc.getTime(TimeID)`
+
+- 参数：
+  - TimeID : `Integer`  
+    要查询的时间类型（0 代表 daytime，1 代表 gametime，2 代表 day）
+- 返回值：获取到的时间
+- 返回值类型：`Integer`
+
+其中，daytime 代表当天日出后流逝的游戏刻数，gametime 代表世界累计流逝的游戏刻数，day 代表已流逝的游戏天数。
+
+
+
+### 设置服务器游戏时间  
+
+`mc.setTime(tick)`
+
+- 参数：
+  - tick : `Integer`  
+    要设置的时间
+- 返回值：是否设置成功
+- 返回值类型：`Boolean`
+
+
+
+### 获取服务器天气  
+
+`mc.getWeather()`
+
+- 返回值：当前天气（0 代表晴天，1 代表雨天，2 代表雷暴）
+- 返回值类型：`Integer`
+
+
+
+### 设置服务器天气  
+
+`mc.setWeather(WeatherID[, duration])`
+
+- 参数：
+  - WeatherID : `Integer`  
+    要设置的天气（0 代表晴天，1 代表雨天，2 代表雷暴）
+  - duration : `Integer`  
+    （可选）天气持续时长，单位为游戏刻。默认为 300 到 900 秒之间的随机时长
+- 返回值：是否设置成功
+- 返回值类型：`Boolean`
+
+
+
+### 获取维度ID
+
+!!! warning
+    此函数仅在0.19.1及以后版本可用
+
+`mc.getDimensionId(name)`
+
+- 参数：
+  - name : `String`  
+    维度名称
+- 返回值：该维度名称对应的维度 ID；若维度名称无效，则返回`null`
+- 返回值类型：`Number`
+
+
+
+### 获取维度名称
+
+!!! warning
+    此函数仅在0.19.1及以后版本可用
+
+`mc.getDimensionName(dimid)`
+
+- 参数：
+  - dimid : `Integer`  
+    维度 ID
+- 返回值：该维度 ID 对应的维度名称；若维度 ID 无效，则返回`null`
+- 返回值类型：`String`
+
+

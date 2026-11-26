@@ -1,0 +1,197 @@
+// bedboo documentation — levimc-kit site config. Built from this folder by levimc.org's deploy (until 2026-11-16 in
+// LiteLDev/bedboo's docs/). The language first, as every levimc.org URL: English at /bedboo/, Simplified Chinese at
+// /zh-Hans/bedboo/ (sources in content/zh/), Traditional Chinese at /zh-Hant/bedboo/, converted from it. The URLs
+// before (/bedboo/zh-Hans/…, /bedboo/zh/…, /bedboo/zh-Hant/…) redirect.
+import { defineDocsConfig, type NavEntry } from '../../src/kit/docs/node/config.ts';
+
+const repo = 'https://github.com/LiteLDev/bedboo';
+const site = 'https://github.com/LiteLDev/liteldev.github.io';
+
+const root = {
+  overview: 'Overview',
+  install: 'Install',
+  guide: 'Guides',
+  concepts: 'Concepts',
+  reference: 'Reference',
+  connecting: 'Connecting to a server',
+  plugins: 'Ecosystem plugins',
+  bedd: 'Driving a real client (BeDD)',
+  agent: 'Survival agent',
+  api: 'API',
+  howItWorks: 'How bedboo works',
+  serverAuthority: 'Server authority',
+  differences: 'Bedrock differences',
+  connection: 'Connection and versions',
+  data: 'Names, ids and data',
+  world: 'World and blocks',
+  survival: 'Player state and survival',
+  chat: 'Chat, commands and HUD',
+  entities: 'Entities and players',
+  movement: 'Movement and physics',
+  inventory: 'Inventory and windows',
+  crafting: 'Crafting and stations',
+  digging: 'Digging and placing',
+  pluginPatches: 'Ecosystem plugin patches',
+  beddMode: 'BeDD mode',
+  bdsNotes: 'BDS notes',
+  versions: 'Supported versions',
+  v12640: 'Bedrock 1.26.40',
+  v12645: 'Bedrock 1.26.45',
+  v12651: 'Bedrock 1.26.51',
+  v12660: 'Bedrock 1.26.60',
+};
+type Labels = typeof root;
+
+const zh: Labels = {
+  overview: '概览',
+  install: '安装',
+  guide: '指南',
+  concepts: '概念',
+  reference: '参考',
+  connecting: '连接服务器',
+  plugins: '生态插件',
+  bedd: '驱动真实客户端（BeDD）',
+  agent: '生存智能体',
+  api: 'API',
+  howItWorks: 'bedboo 的工作方式',
+  serverAuthority: '服务端权威',
+  differences: '基岩版差异',
+  connection: '连接与版本',
+  data: '名称、ID 与数据',
+  world: '世界与方块',
+  survival: '玩家状态与生存',
+  chat: '聊天、命令与 HUD',
+  entities: '实体与玩家',
+  movement: '移动与物理',
+  inventory: '物品栏与窗口',
+  crafting: '合成与工作站',
+  digging: '挖掘与放置',
+  pluginPatches: '生态插件补丁',
+  beddMode: 'BeDD 模式',
+  bdsNotes: 'BDS 备忘',
+  versions: '支持的版本',
+  v12640: 'Bedrock 1.26.40',
+  v12645: 'Bedrock 1.26.45',
+  v12651: 'Bedrock 1.26.51',
+  v12660: 'Bedrock 1.26.60',
+};
+
+// The LeviMC navigation model (src/kit/README.md "Navigation model"): every top-level entry is a section, i.e. an entry
+// of the site column with the sidebar tree of its pages. Five sections, in this order: Overview (the home page itself:
+// what bedboo is, with a code sample; no pages below it), Install (one page: the checkout, updates), Guides (how to do one thing: connect, load plugins, drive a
+// real client, run the agent), Concepts (how bedboo works and why it behaves as it does) and Reference (the API, the
+// Bedrock differences topic by topic, the BDS notes, the supported versions). The "Overview" entries inside the
+// Reference groups are the groups' index pages. `p` is the locale's prefix ('/' or '/zh-Hans/'); zh-Hant is converted
+// from zh by the kit.
+const nav = (p: string, t: Labels): NavEntry[] => {
+  const d = `${p}reference/differences/`;
+  const v = `${p}reference/versions/`;
+  return [
+    // the home page: what bedboo is, with a bot in a few lines (no pages below it)
+    { text: t.overview, link: p },
+    // Install (kit 2.32): the second section on every project's docs, one page like Overview: what you need, how to
+    // install, check, update and get other versions.
+    { text: t.install, link: `${p}install` },
+    {
+      text: t.guide,
+      items: [
+        { text: t.connecting, link: `${p}guide/connecting` },
+        { text: t.plugins, link: `${p}guide/plugins` },
+        { text: t.bedd, link: `${p}guide/bedd` },
+        { text: t.agent, link: `${p}guide/agent` },
+      ],
+    },
+    {
+      text: t.concepts,
+      items: [
+        { text: t.howItWorks, link: `${p}concepts/how-bedboo-works` },
+        { text: t.serverAuthority, link: `${p}concepts/server-authority` },
+      ],
+    },
+    {
+      text: t.reference,
+      items: [
+        { text: t.api, link: `${p}reference/api` },
+        {
+          text: t.differences,
+          items: [
+            { text: t.overview, link: d },
+            { text: t.connection, link: `${d}connection` },
+            { text: t.data, link: `${d}data` },
+            { text: t.world, link: `${d}world` },
+            { text: t.survival, link: `${d}survival` },
+            { text: t.chat, link: `${d}chat` },
+            { text: t.entities, link: `${d}entities` },
+            { text: t.movement, link: `${d}movement` },
+            { text: t.inventory, link: `${d}inventory` },
+            { text: t.crafting, link: `${d}crafting` },
+            { text: t.digging, link: `${d}digging` },
+            { text: t.pluginPatches, link: `${d}plugins` },
+            { text: t.beddMode, link: `${d}bedd` },
+          ],
+        },
+        { text: t.bdsNotes, link: `${p}reference/bds` },
+        {
+          text: t.versions,
+          items: [
+            { text: t.overview, link: v },
+            { text: t.v12640, link: `${v}1.26.40` },
+            { text: t.v12645, link: `${v}1.26.45` },
+            { text: t.v12651, link: `${v}1.26.51` },
+            { text: t.v12660, link: `${v}1.26.60` },
+          ],
+        },
+      ],
+    },
+  ];
+};
+
+// Pages that left the site (kit README "Site config API", `redirects`): every URL they had, in every locale and under
+// the former zh/ prefix, answers with a redirect (a localized one at its language-first URL too). The first bot is the
+// levimc.org tutorial; the introduction is the home page.
+const TUTORIAL = 'https://levimc.org/tutorials/automate/first-bedboo-bot/';
+const TUTORIAL_HANS = 'https://levimc.org/zh-Hans/tutorials/automate/first-bedboo-bot/';
+const TUTORIAL_HANT = 'https://levimc.org/zh-Hant/tutorials/automate/first-bedboo-bot/';
+const redirects: Record<string, string> = {};
+for (const [prefix, tutorial, home] of [
+  ['', TUTORIAL, ''],
+  ['zh-Hans/', TUTORIAL_HANS, 'zh-Hans/'],
+  ['zh/', TUTORIAL_HANS, 'zh-Hans/'],
+  ['zh-Hant/', TUTORIAL_HANT, 'zh-Hant/'],
+] as const) {
+  redirects[`${prefix}guide/getting-started`] = tutorial;
+  redirects[`${prefix}guide/introduction`] = home;
+}
+
+export default defineDocsConfig({
+  base: '/bedboo/',
+  title: 'bedboo',
+  description: 'A Minecraft Bedrock Edition bot library with a mineflayer-compatible API: mineflayer bots and plugins run against Bedrock Dedicated Server.',
+  project: 'bedboo',
+  logo: { src: '/logo.png', alt: 'bedboo' },
+  favicon: '/logo.png',
+  contentDir: 'pages',
+  repo,
+  // the sources live here now
+  editLink: `${site}/edit/main/content/bedboo/pages/:path`,
+  hostname: 'https://levimc.org',
+  sitemap: { hostname: 'https://levimc.org' },
+  i18n: {
+    mode: 'folder',
+    defaultLocale: 'en',
+    localeFirst: true,
+    locales: [
+      { code: 'en', label: 'English', lang: 'en', prefix: '' },
+      { code: 'zh', label: '简体中文', lang: 'zh-Hans', prefix: 'zh-Hans/', folder: 'zh', formerPrefixes: ['zh-Hans/', 'zh/'] },
+      { code: 'zh-Hant', label: '繁體中文', lang: 'zh-Hant', prefix: 'zh-Hant/', convertFrom: 'zh', formerPrefixes: ['zh-Hant/'] },
+    ],
+  },
+  urlStyle: 'html',
+  cleanUrls: true,
+  slug: 'vitepress',
+  markdown: { compat: 'commonmark', containers: { vitepress: true } },
+  outline: [2, 3],
+  sidebar: 'tabs',
+  redirects,
+  nav: { en: nav('/', root), zh: nav('/zh-Hans/', zh) },
+});

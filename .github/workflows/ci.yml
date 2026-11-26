@@ -1,0 +1,39 @@
+# The checks of a pull request: lint, the unit tests and the whole build (each docs site link-checked as it is built).
+# Everything else (typecheck, linkcheck, budget, smoke, the kit's test sites) is run by hand; see README.md.
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm test
+
+      # The registry cache the deploy saves (deploy.yml); read only here.
+      - uses: actions/cache/restore@v6
+        with:
+          path: .cache/mods
+          key: mods-registry-v2-${{ github.run_id }}
+          restore-keys: mods-registry-v2-
+
+      - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

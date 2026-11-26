@@ -1,0 +1,211 @@
+// Progressive enhancement of rendered markdown (event delegation on the [data-doc-content] element):
+// copy buttons, hotbar tabs (WAI-ARIA keyboard pattern; tabs named after a platform form one site-wide group that
+// follows the visitor's platform, see ../shared/platform.ts), client-side navigation for internal links and keyboard access to tables that scroll horizontally.
+import { useEffect, type RefObject } from 'react';
+import { useNavigate } from 'react-router';
+import { internalTarget, isPlainLeftClick } from './components/KitLink';
+import {
+  choiceOfOption,
+  choosePlatform,
+  currentPlatformChoice,
+  devicePlatformChoice,
+  isPlatformChoice,
+  matchPlatform,
+  onPlatformChoice,
+  platformPicked,
+  resetPlatformPick,
+  type PlatformChoice,
+} from '../shared/platform';
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok: boolean;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    ta.remove();
+    return ok;
+  }
+}
+
+function selectTab(tab: HTMLElement, focus = false) {
+  const set = tab.closest('[data-kit-tabs]');
+  if (!set) return;
+  const tabs = [...set.querySelectorAll<HTMLElement>(':scope > [role="tablist"] > [role="tab"]')];
+  for (const t of tabs) {
+    const on = t === tab;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+    const panel = document.getElementById(t.getAttribute('aria-controls') ?? '');
+    if (panel) panel.hidden = !on;
+  }
+  if (focus) tab.focus();
+}
+
+const PLATFORM_TAB = '[data-kit-tabs] > [role="tablist"] > [role="tab"][data-platform]';
+
+/** The tab set the visitor just clicked in: it keeps the tab they clicked when the others follow. */
+let clickedSet: Element | null = null;
+
+/**
+ * Select the tab of `platform` in every platform tab set under `root` (shared/platform.ts matchPlatform: the same
+ * platform or target, else its operating system's tab; a set without one keeps its tab), except in `skip`.
+ */
+function selectPlatform(root: HTMLElement, platform: PlatformChoice, skip?: Element | null) {
+  const sets = new Set<Element>();
+  for (const tab of root.querySelectorAll<HTMLElement>(PLATFORM_TAB)) {
+    const set = tab.closest('[data-kit-tabs]');
+    if (set && set !== skip) sets.add(set);
+  }
+  for (const set of sets) {
+    const tabs = [...set.querySelectorAll<HTMLElement>(':scope > [role="tablist"] > [role="tab"]')];
+    const n = matchPlatform(tabs.map((t) => t.dataset.platform), platform);
+    if (n >= 0) selectTab(tabs[n]!);
+  }
+}
+
+/** A tab the visitor picked: select it, and when it names a platform remember that and sync the other sets. */
+function chooseTab(root: HTMLElement, tab: HTMLElement, focus = false) {
+  selectTab(tab, focus);
+  // a tab of several systems ("macos linux") remembers the visitor's own one of them
+  const p = tab.dataset.platform && choiceOfOption(tab.dataset.platform, currentPlatformChoice());
+  if (tab.closest('[data-kit-tabs]') && isPlatformChoice(p)) {
+    // shared/platform.ts remembers it ("Windows" while Windows arm64 is chosen keeps arm64 for the sets that tell
+    // the two apart) and tells every subscriber: the onPlatformChoice of useContentEnhancements selects the others
+    clickedSet = tab.closest('[data-kit-tabs]');
+    try {
+      choosePlatform(p);
+    } finally {
+      clickedSet = null;
+    }
+  }
+}
+
+/** Whether the URL's #hash names a tab, or something inside a tab panel, under `root`. */
+function hashInTab(root: HTMLElement): boolean {
+  const id = decodeURIComponent(window.location.hash.slice(1));
+  const el = id ? document.getElementById(id) : null;
+  return !!el && root.contains(el) && (el.getAttribute('role') === 'tab' || !!el.closest('[role="tabpanel"]'));
+}
+
+/** Attach interactions to the content element. Re-run when the page changes. */
+export function useContentEnhancements(ref: RefObject<HTMLElement | null>, key: string) {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+      if (!target) return;
+      const copy = target.closest<HTMLElement>('[data-kit-copy]');
+      if (copy && root.contains(copy)) {
+        const code = copy.closest('.kit-code')?.querySelector('pre code');
+        const text = (code as HTMLElement | null)?.innerText ?? code?.textContent ?? '';
+        void copyText(text.replace(/\n$/, '')).then((ok) => {
+          if (!ok) return;
+          copy.setAttribute('data-copied', copy.getAttribute('data-copied-label') ?? 'Copied!');
+          window.setTimeout(() => copy.removeAttribute('data-copied'), 1600);
+        });
+        return;
+      }
+      const tab = target.closest<HTMLElement>('[role="tab"]');
+      if (tab && root.contains(tab) && tab.closest('[data-kit-tabs]')) {
+        chooseTab(root, tab);
+        return;
+      }
+      const a = target.closest('a');
+      if (a && root.contains(a) && !e.defaultPrevented && isPlainLeftClick(e) && !a.target && !a.hasAttribute('download')) {
+        const raw = a.getAttribute('href') ?? '';
+        if (raw.startsWith('#')) return;
+        const to = internalTarget(a.href);
+        if (!to) return;
+        e.preventDefault();
+        navigate(to);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      const tab = (e.target as Element | null)?.closest<HTMLElement>('[role="tab"]');
+      if (!tab || !root.contains(tab)) return;
+      const tabs = [...(tab.parentElement?.querySelectorAll<HTMLElement>('[role="tab"]') ?? [])];
+      const i = tabs.indexOf(tab);
+      let n = -1;
+      if (e.key === 'ArrowRight') n = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') n = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') n = 0;
+      else if (e.key === 'End') n = tabs.length - 1;
+      if (n < 0) return;
+      e.preventDefault();
+      chooseTab(root, tabs[n]!, true);
+    };
+    root.addEventListener('click', onClick);
+    root.addEventListener('keydown', onKey);
+    // Tabs named after a platform (render.ts: data-platform) show ?platform=, the visitor's earlier choice or their
+    // device; a #hash naming a tab still wins (revealHash runs next).
+    resetPlatformPick();
+    let alive = true;
+    const platform = currentPlatformChoice();
+    if (platform) selectPlatform(root, platform);
+    const offPlatform = onPlatformChoice((p) => selectPlatform(root, p, clickedSet));
+    // the browser may tell the processor only asynchronously (Client Hints): refine, unless the visitor picked a tab
+    // meanwhile or the URL's #hash names a tab (or something in one)
+    if (root.querySelector(PLATFORM_TAB)) {
+      void devicePlatformChoice().then(() => {
+        if (!alive || platformPicked() || hashInTab(root)) return;
+        const better = currentPlatformChoice();
+        if (better && better !== platform) selectPlatform(root, better);
+      });
+    }
+    // Open the details/tab that contains the URL hash target.
+    const revealHash = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (!el || !root.contains(el)) return;
+      // a hash naming a tab (#__tabbed_1_2) selects it
+      if (el.getAttribute('role') === 'tab' && el.closest('[data-kit-tabs]')) selectTab(el);
+      for (let p: HTMLElement | null = el; p && p !== root; p = p.parentElement) {
+        if (p instanceof HTMLDetailsElement) p.open = true;
+        if (p.getAttribute('role') === 'tabpanel' && p.hidden) {
+          const t = document.getElementById(p.getAttribute('aria-labelledby') ?? '');
+          if (t) selectTab(t);
+        }
+      }
+    };
+    revealHash();
+    window.addEventListener('hashchange', revealHash);
+    // Tables that overflow horizontally must be scrollable from the keyboard (WCAG 2.1.1).
+    const tableWraps = [...root.querySelectorAll<HTMLElement>('.kit-table-wrap')];
+    const syncScrollable = () => {
+      for (const w of tableWraps) {
+        if (w.scrollWidth > w.clientWidth + 1) w.tabIndex = 0;
+        else if (w !== document.activeElement) w.removeAttribute('tabindex'); // never pull focus from under the user
+      }
+    };
+    // the observer's first callback (after layout) does the initial check: no layout forced while hydrating
+    const resizeObserver = tableWraps.length && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(syncScrollable) : undefined;
+    if (!resizeObserver && tableWraps.length) syncScrollable();
+    // Watch the table too: web fonts loading later change its width without resizing the wrapper.
+    for (const w of tableWraps) for (const el of [w, w.firstElementChild]) if (el) resizeObserver?.observe(el);
+    return () => {
+      alive = false;
+      offPlatform();
+      root.removeEventListener('click', onClick);
+      root.removeEventListener('keydown', onKey);
+      window.removeEventListener('hashchange', revealHash);
+      resizeObserver?.disconnect();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `ref` is a ref object: its identity does not change
+  }, [key, navigate]);
+}

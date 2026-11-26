@@ -1,0 +1,10 @@
+/* Docs app stylesheet: Tailwind v4 + levimc-kit theme + docs layout + generated Shiki token colours. */
+/* source(none): only the kit's own markup carries utility classes (pages are markdown), so nothing else is scanned */
+@import "tailwindcss" source(none);
+@import "../../theme/index.css";
+@import "../../theme/search.css";
+@import "./docs.css";
+@source "../../components";
+@source "./";
+/* the demo's custom layout (a test fixture) */
+@source "../../demo/showcase";
