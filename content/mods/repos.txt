@@ -167,6 +167,7 @@ sunxiaochuan2231/EnchantForge
 superx101/CALL
 SurvivalApparatusCommunication/BedrockBugFixes
 TelluriumDev/BanExplosion
+TelluriumDev/Komomo-Extra
 theaddonn/Do-A-Barrel-Roll-Bedrock
 Timiya-re/LL3_Mine2
 troveminecraft/ShanHai
