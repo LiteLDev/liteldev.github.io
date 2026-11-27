@@ -152,6 +152,7 @@ quizhizhe/Tooth-LLCheckBag
 seetch/FastReconnect
 sh-ayu/CameraOverhaul
 sh-ayu/HotbarKeyLabels
+sh-ayu/ItemPhysicLite
 sh-ayu/JavaChat
 sh-ayu/RadialCommandMod
 ShangguanXi/Advancements-ll-release
