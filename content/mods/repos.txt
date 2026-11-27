@@ -97,6 +97,7 @@ LiteLDev/LeviOptimize
 LiteLDev/LeviSchematic
 LiteLDev/mimalloc
 LiteLDev/MoreDimensions
+LiteLDev/PreLoader
 LL-LSE-Lab/MelonRind
 loitietu/LOICollectionA
 LordBombardir/LLPlaceholderApi
