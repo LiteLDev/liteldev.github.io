@@ -144,6 +144,7 @@ owoser/ServerListEnhancer
 pingguo114514/AddonsManager
 pingguo114514/BetterStop
 pingguo114514/DisconnectScreen
+Pixovate/LifeApple
 PuceLi/NameTagPlus
 PuceLi/NoteBot
 PuceLi/PlayerIPregion
