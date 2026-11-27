@@ -150,6 +150,7 @@ PuceLi/PlayerIPregion
 qing85566/ChiyanMap
 quizhizhe/Tooth-LLCheckBag
 seetch/FastReconnect
+sh-ayu/CameraOverhaul
 sh-ayu/HotbarKeyLabels
 sh-ayu/JavaChat
 sh-ayu/RadialCommandMod
