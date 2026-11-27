@@ -8,8 +8,12 @@ ch1-k-mc/BetterF3-Bedrock
 ch1-k-mc/InventoryUtils-Bedrock
 ch1-k-mc/Jade-Bedrock
 ch1-k-mc/JustEnoughItems-Bedrock
+ch1-k-mc/JustEnoughProfessions-Bedrock
+ch1-k-mc/JustEnoughResources-Bedrock
 ch1-k-mc/PickUpNotifier-Bedrock
 ch1-k-mc/SoundPhysics-Bedrock
+ch1-k-mc/TickCommand-Bedrock
+ch1-k-mc/Tweakeroo-Bedrock
 cngege/AutoFishing
 cngege/DispenserDestroyBlock
 cngege/DispenserGetLavaFromCauldron
