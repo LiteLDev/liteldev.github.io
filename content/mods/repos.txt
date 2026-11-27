@@ -154,11 +154,15 @@ PuceLi/PlayerIPregion
 qing85566/ChiyanMap
 quizhizhe/Tooth-LLCheckBag
 seetch/FastReconnect
+sh-ayu/AutoFishing
 sh-ayu/CameraOverhaul
 sh-ayu/ChatHeads
+sh-ayu/DynamicFPS
 sh-ayu/HotbarKeyLabels
 sh-ayu/ItemPhysicLite
 sh-ayu/JavaChat
+sh-ayu/LootBeams
+sh-ayu/Neat
 sh-ayu/RadialCommandMod
 ShangguanXi/Advancements-ll-release
 ShangguanXi/FarmersDelight-ll-release
