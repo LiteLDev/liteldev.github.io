@@ -135,6 +135,7 @@ mrmagic2020/MWelcome
 MRUIAW/Animated-Mojang
 MRUIAW/BedrockBoatHUD
 MRUIAW/UtilityRenderDistanceExpansion
+n15421/LL-NatPortFixer
 neverforward/Insight
 Nico6719/YEssential
 odorajbotoj/lualoader
