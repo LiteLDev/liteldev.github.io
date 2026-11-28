@@ -53,9 +53,13 @@ async function retryDelay(res) {
   return seconds > 0 ? [seconds * 1000, "message"] : [60_000, "default"];
 }
 
+/** GitHub's own failures (a 502 now and then), which pass: tried again this many times, a little later each time. */
+const TRANSIENT = new Set([500, 502, 503, 504]);
+const TRANSIENT_TRIES = 3;
+
 async function api(path, init = {}, { auth = token, patience = 3 * 60_000 } = {}) {
   const giveUp = Date.now() + patience;
-  for (;;) {
+  for (let failed = 0; ; ) {
     const res = await fetch(`https://api.github.com/${path}`, {
       ...init,
       headers: {
@@ -76,6 +80,14 @@ async function api(path, init = {}, { auth = token, patience = 3 * 60_000 } = {}
       const [asked, source] = await retryDelay(res);
       const wait = Math.min(asked + 1000 + Math.random() * 4000, left);
       console.warn(`${path}: HTTP ${res.status} (${source} asks ${Math.ceil(asked / 1000)} s), again in ${Math.ceil(wait / 1000)} s`);
+      await new Promise((resolve) => setTimeout(resolve, wait));
+      continue;
+    }
+    // GitHub may have made a write before it failed: making it again reuses the branch (propose) or fails with a 4xx,
+    // which is thrown below
+    if (TRANSIENT.has(res.status) && failed < TRANSIENT_TRIES) {
+      const wait = 5_000 * 3 ** failed++ + Math.random() * 2000;
+      console.warn(`${path}: HTTP ${res.status}, again in ${Math.ceil(wait / 1000)} s`);
       await new Promise((resolve) => setTimeout(resolve, wait));
       continue;
     }
@@ -278,7 +290,14 @@ for (const repository of candidates) {
     console.log(`${repository.full_name}: listed as ${as}`);
     continue;
   }
-  await propose(repository, latest, count, manifest);
+  try {
+    await propose(repository, latest, count, manifest);
+  } catch (error) {
+    if (error instanceof RateLimited) throw error;
+    // no pull request yet, so the next run proposes it again; the candidates after it are still proposed now
+    console.log(`::warning::${repository.full_name}: not proposed this run (${String(error).split("\n")[0]})`);
+    continue;
+  }
   opened++;
 }
 console.log(`${dryRun ? "would open" : "opened"} ${opened} pull request${opened === 1 ? "" : "s"}`);
