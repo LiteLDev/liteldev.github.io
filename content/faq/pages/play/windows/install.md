@@ -1,5 +1,9 @@
 # Installing and updating LeviLauncher on Windows
 
+## What should I do if Windows Defender's Smart Application Control blocks the installation of LeviLamina?
+
+The current workaround is to temporarily disable Smart Application Control. We are currently considering applying for a code-signing certificate.
+
 ## Downloading a Minecraft version in the PC version of LeviLauncher is very slow. Do I need a proxy?
 
 No. When downloading, choose a mainland China download source, xboxlive.cn (the launcher lists xboxlive.cn mirrors first, and can also test speeds to pick a source automatically). If the download is still slow, switch to another source. For users in mainland China, "Use mirror source" (on by default) also routes launcher updates, packages, and version lists through mainland China mirrors or a GitHub proxy.

@@ -1,5 +1,9 @@
 # 安装与更新 Windows 版 LeviLauncher
 
+## Windows Defender的智能应用控制拦截了LeviLamina的安装怎么办？
+
+目前的解决方案是先关闭智能应用控制，我们正在考虑申请代码签名证书。
+
 ## 在 PC 版 LeviLauncher 里下载 Minecraft 版本很慢，必须挂代理吗？
 
 不需要。下载时可以选择国内的 xboxlive.cn 下载源（启动器会把 xboxlive.cn 镜像排在前面，也可以让启动器自动测速选源）；如果还是慢，换一个下载源即可。中国大陆用户默认开启“使用镜像源”，启动器更新、软件包和版本列表也会自动走国内镜像或 GitHub 代理。
