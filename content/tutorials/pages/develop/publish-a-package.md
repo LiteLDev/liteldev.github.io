@@ -117,11 +117,11 @@ Once the mod is listed (step 7), players can install the client build of the sam
 
 ## 7. Get listed on LeviMC Mods
 
-[LeviMC Mods](https://levimc.org/mods/) is the catalog shown in `lip`'s **Marketplace** page and LeviLauncher. It is built from a list of repositories in [`content/mods/repos.txt`](https://github.com/LiteLDev/liteldev.github.io/blob/main/mods/repos.txt) in the levimc.org repository.
+[LeviMC Mods](https://levimc.org/mods/) is the catalog shown in `lip`'s **Marketplace** page and LeviLauncher. It is built from a list of repositories in [`content/mods/repos.txt`](https://github.com/LiteLDev/liteldev.github.io/blob/main/content/mods/repos.txt) in the levimc.org repository.
 
 You usually do not need to do anything: every hour, a bot searches GitHub for repositories with a `lip.toml` and a version tag that `lip` can read, and opens a pull request to add them to the list. Once a maintainer merges the pull request, the mod appears a few minutes later when the site is rebuilt.
 
-To get listed sooner, open that pull request yourself: edit [`content/mods/repos.txt`](https://github.com/LiteLDev/liteldev.github.io/blob/main/mods/repos.txt) on GitHub and add a line with `<you>/my-mod`.
+To get listed sooner, open that pull request yourself: edit [`content/mods/repos.txt`](https://github.com/LiteLDev/liteldev.github.io/blob/main/content/mods/repos.txt) on GitHub and add a line with `<you>/my-mod`.
 
 The catalog lists a package when:
 
