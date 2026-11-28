@@ -166,6 +166,7 @@ sh-ayu/JavaChat
 sh-ayu/Neat
 sh-ayu/LootBeams
 sh-ayu/RadialCommandMod
+sh-ayu/SubtleEffects
 ShangguanXi/Advancements-ll-release
 ShangguanXi/FarmersDelight-ll-release
 ShrBox/BackupHelper
