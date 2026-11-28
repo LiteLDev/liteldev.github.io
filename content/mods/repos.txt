@@ -156,6 +156,7 @@ quizhizhe/Tooth-LLCheckBag
 seetch/FastReconnect
 sh-ayu/CameraOverhaul
 sh-ayu/ChatHeads
+sh-ayu/DynamicFPS
 sh-ayu/HotbarKeyLabels
 sh-ayu/ItemPhysicLite
 sh-ayu/JavaChat
