@@ -158,6 +158,7 @@ sh-ayu/AutoFishing
 sh-ayu/3DSkinLayers
 sh-ayu/CameraOverhaul
 sh-ayu/ChatHeads
+sh-ayu/DynamicFPS
 sh-ayu/GuiScaleUnlocker
 sh-ayu/HotbarKeyLabels
 sh-ayu/ItemPhysicLite
