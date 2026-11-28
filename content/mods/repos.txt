@@ -161,6 +161,7 @@ sh-ayu/GuiScaleUnlocker
 sh-ayu/HotbarKeyLabels
 sh-ayu/ItemPhysicLite
 sh-ayu/JavaChat
+sh-ayu/LootBeams
 sh-ayu/RadialCommandMod
 ShangguanXi/Advancements-ll-release
 ShangguanXi/FarmersDelight-ll-release
