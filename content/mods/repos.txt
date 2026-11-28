@@ -159,6 +159,7 @@ sh-ayu/ChatHeads
 sh-ayu/HotbarKeyLabels
 sh-ayu/ItemPhysicLite
 sh-ayu/JavaChat
+sh-ayu/Neat
 sh-ayu/RadialCommandMod
 ShangguanXi/Advancements-ll-release
 ShangguanXi/FarmersDelight-ll-release
