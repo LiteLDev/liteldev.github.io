@@ -1,5 +1,10 @@
 # Windows 版 LeviLauncher 的功能与设置
 
+## 为什么我无法登录/切换账号？
+
+请不要以管理员启动启动器。  
+启动器默认调用系统账号选择器登录，此时管理员权限将被系统拒绝；若以管理员身份启动，则将自动改用 Xbox 账号管理进行登录。
+
 ## GitHub 上已经发布了 LeviLauncher 新版本，为什么启动器内“检查更新”检测不到？
 
 GitHub 上标记为 Pre-release（测试版）的版本（如 `1.1.0-beta.x`），需要在启动器“设置 → 软件更新”中开启“接收测试版更新”后才会推送。正式版（当前最新为 v1.1.0）则会直接推送。你也可以前往 <https://github.com/LiteLDev/LeviLauncher/releases> 手动下载。

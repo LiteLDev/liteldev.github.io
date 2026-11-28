@@ -1,5 +1,10 @@
 # LeviLauncher on Windows: features and settings
 
+## Why can't I sign in or switch accounts?
+
+Please do not launch the launcher as an administrator.
+By default, the launcher uses the system account selector to sign in, and the system will deny administrator privileges in this case; if you launch it as an administrator, it will automatically switch to using Xbox account management to sign in.
+
 ## A new LeviLauncher version has been released on GitHub. Why does "Check for updates" in the launcher not find it?
 
 Versions marked as Pre-release on GitHub (such as `1.1.0-beta.x`) are delivered only if you turn on "Receive beta updates" under "Settings → Software update" in the launcher. Stable releases (the latest is currently v1.1.0) are delivered by default. You can also download any release manually from <https://github.com/LiteLDev/LeviLauncher/releases>.
